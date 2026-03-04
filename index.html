@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动物房笼位管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🐭 动物房笼位管理系统 🐀</h1>
+
+        <!-- 统计信息栏 -->
+        <div class="stats-bar">
+            <div class="stat-item stat-empty">空闲笼位: <span id="statEmpty">0</span></div>
+            <div class="stat-item stat-occupied">占用笼位: <span id="statOccupied">0</span></div>
+            <div class="stat-item stat-long">长期占用: <span id="statLong">0</span></div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="controls">
+            <button class="btn" id="batchModeBtn" onclick="toggleBatchMode()">
+                <span id="batchModeText">进入批量选择模式</span>
+            </button>
+            
+            <div class="batch-controls" id="batchControls">
+                <span class="selection-info" id="selectionInfo">已选择 0 个笼位</span>
+                <button class="btn btn-success" onclick="batchBookCages()">预约选中笼位</button>
+                <button class="btn" onclick="clearSelection()">清除选择</button>
+            </div>
+
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="exportData()">导出数据</button>
+                <button class="btn btn-danger" onclick="clearAllData()">清空所有</button>
+            </div>
+        </div>
+
+        <!-- 图例 -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e8f5e8;"></div>
+                <span>空闲</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fff3e0;"></div>
+                <span>短期占用 ≤7天</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffebee;"></div>
+                <span>长期占用 >7天</span>
+            </div>
+        </div>
+
+        <!-- 小鼠区A -->
+        <div class="section">
+            <div class="section-header">小鼠区 A（8行 × 3列 = 24个笼位）</div>
+            <h3 class="area-title area-a">点击笼位编辑，选择模式下框选预约</h3>
+            <div id="mice-area-a" class="cage-grid"></div>
+        </div>
+
+        <!-- 小鼠区B -->
+        <div class="section">
+            <div class="section-header">小鼠区 B（8行 × 4列 = 32个笼位）</div>
+            <h3 class="area-title area-b">点击笼位编辑，选择模式下框选预约</h3>
+            <div id="mice-area-b" class="cage-grid"></div>
+        </div>
+
+        <!-- 小鼠区C -->
+        <div class="section">
+            <div class="section-header">小鼠区 C（8行 × 4列 = 32个笼位）</div>
+            <h3 class="area-title area-c">点击笼位编辑，选择模式下框选预约</h3>
+            <div id="mice-area-c" class="cage-grid"></div>
+        </div>
+
+        <!-- 大鼠区 -->
+        <div class="section">
+            <div class="section-header">大鼠区（5行 × 3列 = 15个笼位）</div>
+            <h3 class="area-title" style="background: #f3e5f5;">点击笼位编辑，选择模式下框选预约</h3>
+            <div id="rats-area" class="cage-grid"></div>
+        </div>
+    </div>
+
+    <!-- 单个笼位编辑模态框 -->
+    <div id="singleCageModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSingleModal()">&times;</span>
+            <h2 id="singleModalTitle">笼位信息</h2>
+            
+            <form id="singleCageForm">
+                <div class="form-group">
+                    <label>使用者名字 *</label>
+                    <input type="text" id="singleUserName" placeholder="输入使用者名字" required>
+                </div>
+
+                <div class="form-group">
+                    <label>动物类型 *</label>
+                    <select id="singleAnimalType" required>
+                        <option value="">-- 请选择动物类型 --</option>
+                        <option value="mouse">小鼠</option>
+                        <option value="rat">大鼠</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>开始日期 *</label>
+                    <input type="date" id="singleStartDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>结束日期</label>
+                    <input type="date" id="singleEndDate">
+                </div>
+
+                <div class="form-group">
+                    <label>实验描述</label>
+                    <textarea id="singleExperimentDesc" placeholder="输入实验或备注信息"></textarea>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success">保存信息</button>
+                    <button type="button" class="btn btn-danger" onclick="terminateSingleCage()">终止占用</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量预约模态框 -->
+    <div id="batchModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBatchModal()">&times;</span>
+            <h2>批量预约笼位</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <strong>已选笼位数：<span id="selectedCount">0</span></strong>
+                <div class="selected-cages-list" id="selectedCagesList">
+                    <span style="color: #999;">暂未选择任何笼位</span>
+                </div>
+            </div>
+
+            <form id="batchCageForm">
+                <div class="form-group">
+                    <label>使用者名字 *</label>
+                    <input type="text" id="batchUserName" placeholder="输入使用者名字" required>
+                </div>
+
+                <div class="form-group">
+                    <label>动物类型 *</label>
+                    <select id="batchAnimalType" required>
+                        <option value="">-- 请选择动物类型 --</option>
+                        <option value="mouse">小鼠</option>
+                        <option value="rat">大鼠</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>开始日期 *</label>
+                    <input type="date" id="batchStartDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>结束日期</label>
+                    <input type="date" id="batchEndDate">
+                </div>
+
+                <div class="form-group">
+                    <label>实验描述</label>
+                    <textarea id="batchExperimentDesc" placeholder="输入实验或备注信息"></textarea>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success">批量预约</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
