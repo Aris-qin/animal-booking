@@ -11,6 +11,7 @@ if (!GITHUB_TOKEN) {
         localStorage.setItem('github_token', GITHUB_TOKEN);
     } else {
         alert('未提供 Token，系统将使用本地存储模式');
+        GITHUB_TOKEN = null;
     }
 }
 
@@ -29,6 +30,10 @@ const SYNC_INTERVAL = 5000;
 async function loadData() {
     console.log('[加载] 从GitHub获取数据...');
     try {
+        if (!GITHUB_TOKEN) {
+            throw new Error('No token');
+        }
+        
         const response = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
@@ -52,6 +57,11 @@ async function loadData() {
 
 async function saveData() {
     localStorage.setItem('cageData', JSON.stringify(cageData));
+    
+    if (!GITHUB_TOKEN) {
+        console.log('[保存] 无GitHub Token，仅保存本地');
+        return;
+    }
     
     if (Date.now() - lastSync < 5000) {
         console.log('[保存] 本地保存完成，GitHub防抖中...');
@@ -501,5 +511,4 @@ window.addEventListener('click', function(e) {
 });
 
 // ==================== 页面初始化 ====================
-
 document.addEventListener('DOMContentLoaded', init);
