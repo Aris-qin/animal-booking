@@ -11,7 +11,7 @@ if (!GITHUB_TOKEN) {
         localStorage.setItem('github_token', GITHUB_TOKEN);
     } else {
         alert('未提供 Token，系统将使用本地存储模式');
-        GITHUB_TOKEN = null;
+        GITHUB_TOKEN = null; // 如果用户取消输入，将 GITHUB_TOKEN 设为 null
     }
 }
 
@@ -31,7 +31,7 @@ async function loadData() {
     console.log('[加载] 从GitHub获取数据...');
     try {
         if (!GITHUB_TOKEN) {
-            throw new Error('No token');
+            throw new Error('No token provided. Cannot fetch from GitHub.');
         }
         
         const response = await fetch(API_URL, {
@@ -41,7 +41,15 @@ async function loadData() {
             }
         });
         
-        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+        if (!response.ok) {
+            // 如果响应状态码是 404 (Not Found)，表示文件不存在，这是正常的，可以初始化为空对象
+            if (response.status === 404) {
+                console.warn('cageData.json 文件不存在，将初始化为空数据。');
+                cageData = {};
+                return; // 文件不存在不是错误，不需要抛出
+            }
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+        }
         
         const data = await response.json();
         cageData = data || {};
@@ -49,6 +57,7 @@ async function loadData() {
         lastSync = Date.now();
     } catch(e) {
         console.error('✗ GitHub加载失败:', e.message);
+        // 如果 GitHub Token 失效或加载失败，尝试使用本地缓存
         const cached = localStorage.getItem('cageData');
         cageData = cached ? JSON.parse(cached) : {};
         console.log('使用本地缓存');
@@ -56,6 +65,7 @@ async function loadData() {
 }
 
 async function saveData() {
+    // 本地保存（快）
     localStorage.setItem('cageData', JSON.stringify(cageData));
     
     if (!GITHUB_TOKEN) {
@@ -63,6 +73,7 @@ async function saveData() {
         return;
     }
     
+    // 防抖：5秒内不再重复上传 GitHub
     if (Date.now() - lastSync < 5000) {
         console.log('[保存] 本地保存完成，GitHub防抖中...');
         return;
@@ -70,6 +81,7 @@ async function saveData() {
     
     console.log('[保存] 开始上传到GitHub...');
     try {
+        // 先获取文件的 SHA 值，用于更新文件
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
@@ -80,9 +92,13 @@ async function saveData() {
         let sha = null;
         if (getResponse.ok) {
             const fileData = await getResponse.json();
-            sha = fileData.sha;
+            sha = fileData.sha; // 获取当前文件的 SHA 值
+        } else if (getResponse.status !== 404) {
+            // 如果不是 404（文件不存在），则是其他错误，需要处理
+            throw new Error(`Failed to get file SHA: ${getResponse.status} ${getResponse.statusText}`);
         }
         
+        // 上传更新数据
         const updateResponse = await fetch(API_URL, {
             method: 'PUT',
             headers: {
@@ -91,8 +107,8 @@ async function saveData() {
             },
             body: JSON.stringify({
                 message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-                content: btoa(JSON.stringify(cageData, null, 2)),
-                sha: sha
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))), // base64编码
+                sha: sha // 更新文件时需要提供 SHA 值
             })
         });
         
@@ -101,7 +117,7 @@ async function saveData() {
             lastSync = Date.now();
         } else {
             const errorData = await updateResponse.json();
-            console.error('✗ GitHub上传失败:', errorData.message);
+            console.error('✗ GitHub上传失败:', errorData.message || updateResponse.statusText);
         }
     } catch(e) {
         console.error('✗ 上传异常:', e.message);
@@ -366,19 +382,25 @@ function updateCageDisplay(cageId) {
     if (data.experimentDesc) dateText += `\n${data.experimentDesc}`;
     dateInfoElement.textContent = dateText;
     
-    const maxDays = 30;
+    const maxDays = 30; // 假设最长显示30天
     const percentage = Math.min((daysUsed / maxDays) * 100, 100);
     durationFillElement.style.width = `${percentage}%`;
     durationFillElement.className = `duration-fill ${durationClass}`;
 }
 
 function updateAllCages() {
-    Object.keys(cageData).forEach(updateCageDisplay);
+    // 获取所有笼位元素，逐个更新显示
+    document.querySelectorAll('.cage').forEach(cageElement => {
+        const cageId = cageElement.dataset.cageId;
+        updateCageDisplay(cageId);
+    });
 }
+
 
 function updateStats() {
     let emptyCount = 0, occupiedCount = 0, longTermCount = 0;
-    const totalCages = 24 + 32 + 32 + 15;
+    // 总笼位数需要根据实际生成逻辑计算
+    const totalCages = (8 * 3) + (8 * 4) + (8 * 4) + (5 * 3); // 24 + 32 + 32 + 15 = 103
     
     Object.keys(cageData).forEach(cageId => {
         const data = cageData[cageId];
