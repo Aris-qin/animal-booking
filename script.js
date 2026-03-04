@@ -1,7 +1,18 @@
 // ==================== GitHub配置 ====================
-const GITHUB_USER = 'Aris-qin';
-const GITHUB_REPO = 'animal-booking';
-const GITHUB_TOKEN = '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';
+// 从 localStorage 读取 token（用户自己输入）
+let GITHUB_USER = 'Aris-qin';
+let GITHUB_REPO = 'animal-booking';
+let GITHUB_TOKEN = localStorage.getItem('github_token') || null;
+
+// 如果没有 token，提示用户输入
+if (!GITHUB_TOKEN) {
+    GITHUB_TOKEN = prompt('请输入你的 GitHub Personal Access Token:\n(从 https://github.com/settings/tokens 获取)');
+    if (GITHUB_TOKEN) {
+        localStorage.setItem('github_token', GITHUB_TOKEN);
+    } else {
+        alert('未提供 Token，系统将使用本地存储模式');
+    }
+}
 
 const DATA_FILE = 'cageData.json';
 const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
@@ -490,4 +501,5 @@ window.addEventListener('click', function(e) {
 });
 
 // ==================== 页面初始化 ====================
+
 document.addEventListener('DOMContentLoaded', init);
