@@ -65,6 +65,21 @@ async function loadData() {
     }
 }
 
+// 正确的 UTF-8 到 Base64 编码函数
+function utf8ToBase64(str) {
+    // 首先将字符串编码为 UTF-8
+    const encoder = new TextEncoder();
+    const utf8Bytes = encoder.encode(str);
+    
+    // 然后将 Uint8Array 转换为 Base64 字符串
+    let binaryString = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+        binaryString += String.fromCharCode(utf8Bytes[i]);
+    }
+    
+    return btoa(binaryString);
+}
+
 async function saveData() {
     // 本地保存（快）
     localStorage.setItem('cageData', JSON.stringify(cageData));
@@ -86,29 +101,39 @@ async function saveData() {
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3' // 获取文件元数据，包含SHA
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
         let sha = null;
         if (getResponse.ok) { // 如果文件存在且成功获取
             const fileData = await getResponse.json();
-            sha = fileData.sha; 
-            console.log(`[DEBUG] 成功获取到 SHA: ${sha}`);
+            console.log('[DEBUG] 获取到的文件数据:', fileData);
+            
+            // 检查 fileData 是否包含 sha 字段
+            if (fileData && fileData.sha) {
+                sha = fileData.sha;
+                console.log(`[DEBUG] 成功获取到 SHA: ${sha}`);
+            } else {
+                console.log('[DEBUG] 文件存在但未找到 sha 字段，可能是空文件或其他问题');
+                // 尝试重新创建文件
+                sha = null;
+            }
         } else if (getResponse.status === 404) { // 如果文件不存在
             console.log(`[DEBUG] ${DATA_FILE} 不存在于GitHub仓库 (404)。SHA将保持为null，准备创建新文件。`);
             // sha 仍然为 null，表示是创建操作
         } else { // 其他非 200 和非 404 的错误
+            const errorText = await getResponse.text();
             console.error(`[DEBUG] 获取文件SHA时发生未知错误: ${getResponse.status} ${getResponse.statusText}`);
-            const errorText = await getResponse.text(); // 尝试获取响应文本以获取更多信息
             console.error(`[DEBUG] 获取SHA时的响应内容:`, errorText);
             throw new Error(`Failed to get file SHA: ${getResponse.status} ${getResponse.statusText}`);
         }
         
         // 构建请求体，根据 sha 是否存在决定是否包含 sha 字段
+        const jsonContent = JSON.stringify(cageData, null, 2);
         const requestBody = {
             message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))) // base64编码
+            content: utf8ToBase64(jsonContent) // 使用正确的 UTF-8 编码
         };
 
         if (sha) { // 只有在 sha 存在时才添加 sha 字段 (即更新文件时)
@@ -124,7 +149,8 @@ async function saveData() {
             method: 'PUT',
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify(requestBody) // 使用修改后的请求体
         });
@@ -132,13 +158,24 @@ async function saveData() {
         if (updateResponse.ok) {
             console.log('✓ 数据已上传到GitHub');
             lastSync = Date.now(); // 关键改动：这里仍然保留，只在成功上传后更新
+            
+            // 验证上传是否成功
+            const resultData = await updateResponse.json();
+            console.log('[DEBUG] GitHub API 返回结果:', resultData);
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message || updateResponse.statusText);
             console.error('[DEBUG] PUT请求失败的完整错误数据:', errorData);
+            
+            // 如果是因为 SHA 问题，尝试重新获取
+            if (errorData.message && errorData.message.includes('sha')) {
+                console.log('[DEBUG] SHA 验证失败，尝试重新获取文件信息...');
+                // 可以在这里添加重试逻辑
+            }
         }
     } catch(e) {
         console.error('✗ 上传异常:', e.message);
+        console.error('[DEBUG] 上传异常堆栈:', e.stack);
     }
 }
 
