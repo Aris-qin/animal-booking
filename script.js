@@ -42,10 +42,11 @@ async function loadData() {
         });
         
         if (!response.ok) {
+            // 如果响应状态码是 404 (Not Found)，表示文件不存在，这是正常的，可以初始化为空对象
             if (response.status === 404) {
                 console.warn('cageData.json 文件不存在，将初始化为空数据。');
                 cageData = {};
-                return; 
+                return; // 文件不存在不是错误，不需要抛出
             }
             throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
         }
@@ -57,6 +58,7 @@ async function loadData() {
         // lastSync = Date.now(); // <-- 这一行被移除或注释掉
     } catch(e) {
         console.error('✗ GitHub加载失败:', e.message);
+        // 如果 GitHub Token 失效或加载失败，尝试使用本地缓存
         const cached = localStorage.getItem('cageData');
         cageData = cached ? JSON.parse(cached) : {};
         console.log('使用本地缓存');
@@ -80,32 +82,51 @@ async function saveData() {
     
     console.log('[保存] 开始上传到GitHub...');
     try {
+        console.log('[DEBUG] 尝试获取文件的SHA值...');
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3'
+                'Accept': 'application/vnd.github.v3' // 获取文件元数据，包含SHA
             }
         });
         
         let sha = null;
-        if (getResponse.ok) {
+        if (getResponse.ok) { // 如果文件存在且成功获取
             const fileData = await getResponse.json();
             sha = fileData.sha; 
-        } else if (getResponse.status !== 404) {
+            console.log(`[DEBUG] 成功获取到 SHA: ${sha}`);
+        } else if (getResponse.status === 404) { // 如果文件不存在
+            console.log(`[DEBUG] ${DATA_FILE} 不存在于GitHub仓库 (404)。SHA将保持为null，准备创建新文件。`);
+            // sha 仍然为 null，表示是创建操作
+        } else { // 其他非 200 和非 404 的错误
+            console.error(`[DEBUG] 获取文件SHA时发生未知错误: ${getResponse.status} ${getResponse.statusText}`);
+            const errorText = await getResponse.text(); // 尝试获取响应文本以获取更多信息
+            console.error(`[DEBUG] 获取SHA时的响应内容:`, errorText);
             throw new Error(`Failed to get file SHA: ${getResponse.status} ${getResponse.statusText}`);
         }
         
+        // 构建请求体，根据 sha 是否存在决定是否包含 sha 字段
+        const requestBody = {
+            message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))) // base64编码
+        };
+
+        if (sha) { // 只有在 sha 存在时才添加 sha 字段 (即更新文件时)
+            requestBody.sha = sha;
+            console.log(`[DEBUG] SHA值已添加到请求体中: ${sha}`);
+        } else {
+            console.log('[DEBUG] SHA值未添加到请求体中 (文件不存在或SHA为null)。');
+        }
+
+        console.log('[DEBUG] 准备发送PUT请求到GitHub API...');
+        // 上传或更新数据
         const updateResponse = await fetch(API_URL, {
             method: 'PUT',
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))), 
-                sha: sha 
-            })
+            body: JSON.stringify(requestBody) // 使用修改后的请求体
         });
         
         if (updateResponse.ok) {
@@ -114,6 +135,7 @@ async function saveData() {
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message || updateResponse.statusText);
+            console.error('[DEBUG] PUT请求失败的完整错误数据:', errorData);
         }
     } catch(e) {
         console.error('✗ 上传异常:', e.message);
@@ -145,13 +167,6 @@ async function init() {
 }
 
 // ==================== 笼位生成函数 ====================
-function generateAllCages() {
-    generateCagesForArea('mice-area-a', 8, 3, 'mouse');
-    generateCagesForArea('mice-area-b', 8, 4, 'mouse');
-    generateCagesForArea('mice-area-c', 8, 4, 'mouse');
-    generateCagesForArea('rats-area', 5, 3, 'rat');
-}
-
 function generateCagesForArea(containerId, rows, cols, type) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
@@ -166,6 +181,14 @@ function generateCagesForArea(containerId, rows, cols, type) {
         }
     }
 }
+
+function generateAllCages() {
+    generateCagesForArea('mice-area-a', 8, 3, 'mouse');
+    generateCagesForArea('mice-area-b', 8, 4, 'mouse');
+    generateCagesForArea('mice-area-c', 8, 4, 'mouse');
+    generateCagesForArea('rats-area', 5, 3, 'rat');
+}
+
 
 function createCageElement(id, type, area) {
     const cage = document.createElement('div');
