@@ -23,8 +23,8 @@ let cageData = {};
 let currentEditingCage = null;
 let batchMode = false;
 let selectedCages = new Set();
-let lastSync = 0;
-const SYNC_INTERVAL = 5000;
+let lastSync = 0; // 这个变量现在只用于跟踪数据成功上传到 GitHub 的时间
+const SYNC_INTERVAL = 5000; // 自动同步间隔
 
 // ==================== GitHub数据操作 ====================
 async function loadData() {
@@ -42,11 +42,10 @@ async function loadData() {
         });
         
         if (!response.ok) {
-            // 如果响应状态码是 404 (Not Found)，表示文件不存在，这是正常的，可以初始化为空对象
             if (response.status === 404) {
                 console.warn('cageData.json 文件不存在，将初始化为空数据。');
                 cageData = {};
-                return; // 文件不存在不是错误，不需要抛出
+                return; 
             }
             throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
         }
@@ -54,10 +53,10 @@ async function loadData() {
         const data = await response.json();
         cageData = data || {};
         console.log('✓ 从GitHub加载数据成功');
-        lastSync = Date.now();
+        // 关键改动：这里不再更新 lastSync，lastSync 现在只在成功上传后更新
+        // lastSync = Date.now(); // <-- 这一行被移除或注释掉
     } catch(e) {
         console.error('✗ GitHub加载失败:', e.message);
-        // 如果 GitHub Token 失效或加载失败，尝试使用本地缓存
         const cached = localStorage.getItem('cageData');
         cageData = cached ? JSON.parse(cached) : {};
         console.log('使用本地缓存');
@@ -81,7 +80,6 @@ async function saveData() {
     
     console.log('[保存] 开始上传到GitHub...');
     try {
-        // 先获取文件的 SHA 值，用于更新文件
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
@@ -92,13 +90,11 @@ async function saveData() {
         let sha = null;
         if (getResponse.ok) {
             const fileData = await getResponse.json();
-            sha = fileData.sha; // 获取当前文件的 SHA 值
+            sha = fileData.sha; 
         } else if (getResponse.status !== 404) {
-            // 如果不是 404（文件不存在），则是其他错误，需要处理
             throw new Error(`Failed to get file SHA: ${getResponse.status} ${getResponse.statusText}`);
         }
         
-        // 上传更新数据
         const updateResponse = await fetch(API_URL, {
             method: 'PUT',
             headers: {
@@ -107,14 +103,14 @@ async function saveData() {
             },
             body: JSON.stringify({
                 message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))), // base64编码
-                sha: sha // 更新文件时需要提供 SHA 值
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2)))), 
+                sha: sha 
             })
         });
         
         if (updateResponse.ok) {
             console.log('✓ 数据已上传到GitHub');
-            lastSync = Date.now();
+            lastSync = Date.now(); // 关键改动：这里仍然保留，只在成功上传后更新
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message || updateResponse.statusText);
@@ -382,14 +378,13 @@ function updateCageDisplay(cageId) {
     if (data.experimentDesc) dateText += `\n${data.experimentDesc}`;
     dateInfoElement.textContent = dateText;
     
-    const maxDays = 30; // 假设最长显示30天
+    const maxDays = 30; 
     const percentage = Math.min((daysUsed / maxDays) * 100, 100);
     durationFillElement.style.width = `${percentage}%`;
     durationFillElement.className = `duration-fill ${durationClass}`;
 }
 
 function updateAllCages() {
-    // 获取所有笼位元素，逐个更新显示
     document.querySelectorAll('.cage').forEach(cageElement => {
         const cageId = cageElement.dataset.cageId;
         updateCageDisplay(cageId);
@@ -399,8 +394,7 @@ function updateAllCages() {
 
 function updateStats() {
     let emptyCount = 0, occupiedCount = 0, longTermCount = 0;
-    // 总笼位数需要根据实际生成逻辑计算
-    const totalCages = (8 * 3) + (8 * 4) + (8 * 4) + (5 * 3); // 24 + 32 + 32 + 15 = 103
+    const totalCages = (8 * 3) + (8 * 4) + (8 * 4) + (5 * 3); 
     
     Object.keys(cageData).forEach(cageId => {
         const data = cageData[cageId];
