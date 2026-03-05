@@ -182,5 +182,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:14:04.835Z"
+  },
+  "2-H3": {
+    "userName": "蒋佳妙",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "mouse",
+    "experimentDesc": "小鼠造模给药",
+    "lastUpdated": "2026-03-05T04:05:09.834Z"
   }
 }
