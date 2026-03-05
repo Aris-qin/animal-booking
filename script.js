@@ -1,10 +1,8 @@
 // ==================== GitHub配置 ====================
-// 从 localStorage 读取 token（用户自己输入）
 let GITHUB_USER = 'Aris-qin';
 let GITHUB_REPO = 'animal-booking';
 let GITHUB_TOKEN = localStorage.getItem('github_token') || null;
 
-// 如果没有 token，提示用户输入
 if (!GITHUB_TOKEN) {
     GITHUB_TOKEN = prompt('请输入你的 GitHub Personal Access Token:\n(从 https://github.com/settings/tokens 获取)');
     if (GITHUB_TOKEN) {
@@ -31,7 +29,7 @@ async function loadData() {
     console.log('[加载] 从GitHub获取数据...');
     try {
         if (!GITHUB_TOKEN) {
-            throw new Error('No token provided');
+            throw new Error('No token');
         }
         
         const response = await fetch(API_URL, {
@@ -41,14 +39,13 @@ async function loadData() {
             }
         });
         
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.log('文件不存在，初始化为空');
-                cageData = {};
-                return;
-            }
-            throw new Error(`GitHub API error: ${response.status}`);
+        if (response.status === 404) {
+            console.log('文件不存在，初始化为空');
+            cageData = {};
+            return;
         }
+        
+        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
         
         const data = await response.json();
         cageData = data || {};
@@ -76,35 +73,47 @@ async function saveData() {
     
     console.log('[保存] 开始上传到GitHub...');
     try {
+        console.log('[DEBUG] 尝试获取文件SHA...');
+        
+        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3'
+                'Accept': 'application/vnd.github.v3+json'  // ⭐️ 改成这个！
             }
         });
         
         let sha = null;
         if (getResponse.ok) {
             const fileData = await getResponse.json();
-            sha = fileData.sha;
-            console.log('[DEBUG] 获取到SHA:', sha);
+            console.log('[DEBUG] 获取到的文件数据:', fileData);
+            
+            // ⭐️ 正确的方式提取 sha
+            if (fileData && fileData.sha) {
+                sha = fileData.sha;
+                console.log('[DEBUG] 成功获取SHA:', sha);
+            }
         } else if (getResponse.status === 404) {
             console.log('[DEBUG] 文件不存在，准备创建');
+        } else {
+            console.log('[DEBUG] 获取SHA失败，状态码:', getResponse.status);
         }
         
-        // ⭐️ 关键修复：只在 sha 存在时才添加到请求体中
+        // ⭐️ 构建请求体
         const requestBody = {
             message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
             content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
         };
         
-        // ⭐️ 关键修复：只有当 sha 存在时才添加这个字段
+        // ⭐️ 关键修复：只在 sha 存在时才添加
         if (sha) {
             requestBody.sha = sha;
-            console.log('[DEBUG] 添加SHA:', sha);
+            console.log('[DEBUG] 添加SHA到请求体');
         } else {
-            console.log('[DEBUG] 创建新文件，不添加SHA');
+            console.log('[DEBUG] 不添加SHA，使用创建模式');
         }
+        
+        console.log('[DEBUG] 发送PUT请求...');
         
         const updateResponse = await fetch(API_URL, {
             method: 'PUT',
@@ -121,6 +130,7 @@ async function saveData() {
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message);
+            console.error('[DEBUG] 错误详情:', errorData);
         }
     } catch(e) {
         console.error('✗ 上传异常:', e.message);
