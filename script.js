@@ -1,169 +1,3 @@
-// ==================== GitHub配置 ====================
-let GITHUB_USER = 'Aris-qin';
-let GITHUB_REPO = 'animal-booking';
-let GITHUB_TOKEN = localStorage.getItem('github_token') || null;
-
-if (!GITHUB_TOKEN) {
-    GITHUB_TOKEN = prompt('请输入你的 GitHub Personal Access Token:\n(从 https://github.com/settings/tokens 获取)');
-    if (GITHUB_TOKEN) {
-        localStorage.setItem('github_token', GITHUB_TOKEN);
-    } else {
-        alert('未提供 Token，系统将使用本地存储模式');
-        GITHUB_TOKEN = null;
-    }
-}
-
-const DATA_FILE = 'cageData.json';
-const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
-//               ^                                                                                ^
-//               注意这里是反引号 (backticks)
-// ==================== 全局变量 ====================
-let cageData = {};
-let currentEditingCage = null;
-let batchMode = false;
-let selectedCages = new Set();
-let lastSync = 0;
-const SYNC_INTERVAL = 5000;
-
-// ==================== GitHub数据操作 ====================
-async function loadData() {
-    console.log('[加载] 从GitHub获取数据...');
-    try {
-        if (!GITHUB_TOKEN) {
-            throw new Error('No token');
-        }
-        
-        const response = await fetch(API_URL, {
-            headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3.raw'
-            }
-        });
-        
-        if (response.status === 404) {
-            console.log('文件不存在，初始化为空');
-            cageData = {};
-            return;
-        }
-        
-        if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
-        
-        const data = await response.json();
-        cageData = data || {};
-        console.log('✓ 从GitHub加载数据成功');
-    } catch(e) {
-        console.error('✗ GitHub加载失败:', e.message);
-        const cached = localStorage.getItem('cageData');
-        cageData = cached ? JSON.parse(cached) : {};
-        console.log('使用本地缓存');
-    }
-}
-
-async function saveData() {
-    localStorage.setItem('cageData', JSON.stringify(cageData));
-    
-    if (!GITHUB_TOKEN) {
-        console.log('[保存] 无GitHub Token，仅保存本地');
-        return;
-    }
-    
-    if (Date.now() - lastSync < 5000) {
-        console.log('[保存] 本地保存完成，GitHub防抖中...');
-        return;
-    }
-    
-    console.log('[保存] 开始上传到GitHub...');
-    try {
-        console.log('[DEBUG] 尝试获取文件SHA...');
-        
-        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
-        const getResponse = await fetch(API_URL, {
-            headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'  // ⭐️ 必须用这个！
-            }
-        });
-        
-           let sha = null;
-        if (getResponse.ok) {
-            const fileData = await getResponse.json();
-            console.log('[DEBUG] 获取到的文件数据:', fileData);
-            if (fileData && fileData.sha) {
-                sha = fileData.sha;
-                console.log('[DEBUG] 成功获取SHA:', sha);
-            } else {
-                console.warn('[DEBUG] 未从文件数据中获取到SHA，fileData:', fileData);
-            }
-        } else if (getResponse.status === 404) {
-            console.log('[DEBUG] 文件不存在，准备创建');
-        } else {
-            // 添加此处的日志
-            console.error(`[DEBUG] 获取文件元数据失败: ${getResponse.status} ${getResponse.statusText}`);
-            const errorText = await getResponse.text(); // 尝试获取错误响应的文本
-            console.error('[DEBUG] 获取文件元数据失败详情:', errorText);
-        }
-        
-        // ⭐️ 关键修复：动态构建请求体
-        const requestBody = {
-            message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
-        };
-        
-        // ⭐️ 只在 sha 存在时才添加
-        if (sha) {
-            requestBody.sha = sha;
-            console.log('[DEBUG] 添加SHA到请求体');
-        } else {
-            console.log('[DEBUG] 不添加SHA，使用创建模式');
-        }
-        
-        console.log('[DEBUG] 发送PUT请求...');
-        
-        const updateResponse = await fetch(API_URL, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (updateResponse.ok) {
-            console.log('✓ 数据已上传到GitHub');
-            lastSync = Date.now();
-        } else {
-            const errorData = await updateResponse.json();
-            console.error('✗ GitHub上传失败:', errorData.message);
-        }
-    } catch(e) {
-        console.error('✗ 上传异常:', e.message);
-    }
-}
-
-// ==================== 初始化函数 ====================
-async function init() {
-    console.log('🚀 页面初始化中...');
-    
-    await loadData();
-    generateAllCages();
-    updateAllCages();
-    updateStats();
-    
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('singleStartDate').value = today;
-    document.getElementById('batchStartDate').value = today;
-    
-    console.log('✓ 页面初始化完成');
-    
-    setInterval(async () => {
-        console.log('[定时] 自动同步GitHub数据...');
-        await loadData();
-        updateAllCages();
-        updateStats();
-    }, SYNC_INTERVAL);
-}
-
-// ==================== 笼位生成函数 ====================
 function generateCagesForArea(containerId, rows, cols, type) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
@@ -178,14 +12,12 @@ function generateCagesForArea(containerId, rows, cols, type) {
         }
     }
 }
-
 function generateAllCages() {
     generateCagesForArea('mice-area-a', 8, 3, 'mouse');
     generateCagesForArea('mice-area-b', 8, 4, 'mouse');
     generateCagesForArea('mice-area-c', 8, 4, 'mouse');
     generateCagesForArea('rats-area', 5, 3, 'rat');
 }
-
 function createCageElement(id, type, area) {
     const cage = document.createElement('div');
     cage.className = 'cage';
@@ -214,8 +46,6 @@ function createCageElement(id, type, area) {
     
     return cage;
 }
-
-// ==================== 批量模式函数 ====================
 function toggleBatchMode() {
     batchMode = !batchMode;
     const controls = document.getElementById('batchControls');
@@ -240,7 +70,6 @@ function toggleBatchMode() {
         clearSelection();
     }
 }
-
 function toggleCageSelection(cageId) {
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
     const data = cageData[cageId];
@@ -260,7 +89,6 @@ function toggleCageSelection(cageId) {
     
     updateSelectionInfo();
 }
-
 function updateSelectionInfo() {
     const info = document.getElementById('selectionInfo');
     const count = document.getElementById('selectedCount');
@@ -277,7 +105,6 @@ function updateSelectionInfo() {
         listContainer.innerHTML = '<span style="color: #999;">暂未选择任何笼位</span>';
     }
 }
-
 function sortCageIds(cageIds) {
     return cageIds.sort((a, b) => {
         const matchA = a.match(/([A-Z]+)(\d+)/);
@@ -293,7 +120,6 @@ function sortCageIds(cageIds) {
         return colA - colB;
     });
 }
-
 function clearSelection() {
     selectedCages.forEach(cageId => {
         const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
@@ -302,7 +128,6 @@ function clearSelection() {
     selectedCages.clear();
     updateSelectionInfo();
 }
-
 function batchBookCages() {
     if (selectedCages.size === 0) {
         alert('请先选择要预约的笼位！');
@@ -311,8 +136,6 @@ function batchBookCages() {
     document.getElementById('batchModal').style.display = 'block';
     updateSelectionInfo();
 }
-
-// ==================== 模态框函数 ====================
 function openSingleModal(cageId) {
     if (batchMode) return;
     
@@ -337,17 +160,13 @@ function openSingleModal(cageId) {
     
     modal.style.display = 'block';
 }
-
 function closeSingleModal() {
     document.getElementById('singleCageModal').style.display = 'none';
     currentEditingCage = null;
 }
-
 function closeBatchModal() {
     document.getElementById('batchModal').style.display = 'none';
 }
-
-// ==================== 数据更新函数 ====================
 function updateCageDisplay(cageId) {
     const data = cageData[cageId];
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
@@ -402,14 +221,12 @@ function updateCageDisplay(cageId) {
     durationFillElement.style.width = `${percentage}%`;
     durationFillElement.className = `duration-fill ${durationClass}`;
 }
-
 function updateAllCages() {
     document.querySelectorAll('.cage').forEach(cageElement => {
         const cageId = cageElement.dataset.cageId;
         updateCageDisplay(cageId);
     });
 }
-
 function updateStats() {
     let emptyCount = 0, occupiedCount = 0, longTermCount = 0;
     const totalCages = (8 * 3) + (8 * 4) + (8 * 4) + (5 * 3);
@@ -434,7 +251,6 @@ function updateStats() {
     document.getElementById('statOccupied').textContent = occupiedCount;
     document.getElementById('statLong').textContent = longTermCount;
 }
-
 function terminateSingleCage() {
     if (currentEditingCage && confirm(`确定要终止笼位 ${currentEditingCage} 的占用吗？`)) {
         delete cageData[currentEditingCage];
@@ -445,7 +261,6 @@ function terminateSingleCage() {
         alert('笼位占用已终止！');
     }
 }
-
 function exportData() {
     const dataStr = JSON.stringify(cageData, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json; charset=utf-8'});
@@ -456,7 +271,6 @@ function exportData() {
     link.click();
     URL.revokeObjectURL(url);
 }
-
 function clearAllData() {
     if (confirm('确定要清空所有笼位数据吗？此操作不可恢复！')) {
         cageData = {};
@@ -467,6 +281,234 @@ function clearAllData() {
         alert('所有数据已清空！');
     }
 }
+// ==================== GitHub配置 ====================
+let GITHUB_USER = 'Aris-qin';
+let GITHUB_REPO = 'animal-booking';
+let GITHUB_TOKEN = localStorage.getItem('github_token') || null;
+
+if (!GITHUB_TOKEN) {
+    GITHUB_TOKEN = prompt('请输入你的 GitHub Personal Access Token:\n(从 https://github.com/settings/tokens 获取)');
+    if (GITHUB_TOKEN) {
+        localStorage.setItem('github_token', GITHUB_TOKEN);
+    } else {
+        alert('未提供 Token，系统将使用本地存储模式');
+        GITHUB_TOKEN = null;
+    }
+}
+
+const DATA_FILE = 'cageData.json';
+// ⭐️ 关键修复：API_URL使用反引号
+const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
+
+// ==================== 全局变量 ====================
+let cageData = {};
+let currentEditingCage = null;
+let batchMode = false;
+let selectedCages = new Set();
+let lastSync = 0;
+const SYNC_INTERVAL = 5000;
+
+// ==================== GitHub数据操作 ====================
+async function loadData() {
+    console.log('[加载] 从GitHub获取数据...');
+    try {
+        if (!GITHUB_TOKEN) {
+            console.warn('未提供 GitHub Token，将使用本地缓存加载数据。');
+            const cached = localStorage.getItem('cageData');
+            cageData = cached ? JSON.parse(cached) : {};
+            console.log('✓ 从本地缓存加载数据成功');
+            return;
+        }
+        
+        const response = await fetch(API_URL, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                // ⭐️ 关键修复：GET请求需要这个Accept头来获取文件元数据（包括sha）
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        if (response.status === 404) {
+            console.log('文件不存在，初始化为空。');
+            cageData = {};
+            return;
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+        }
+        
+        const fileData = await response.json(); // fileData现在是包含sha、content等的对象
+        console.log('[DEBUG] loadData 获取到的文件元数据:', fileData);
+
+        if (fileData && fileData.content) {
+            // ⭐️ 关键修复：需要base64解码内容
+            const decodedContent = atob(fileData.content);
+            cageData = JSON.parse(decodedContent) || {};
+            console.log('✓ 从GitHub加载数据成功并解码');
+        } else {
+            console.warn('未能从GitHub文件数据中获取到有效内容，初始化为空。', fileData);
+            cageData = {};
+        }
+    } catch(e) {
+        console.error('✗ GitHub加载失败:', e.message);
+        const cached = localStorage.getItem('cageData');
+        cageData = cached ? JSON.parse(cached) : {};
+        console.log('使用本地缓存');
+    }
+}
+
+async function saveData() {
+    localStorage.setItem('cageData', JSON.stringify(cageData));
+    
+    if (!GITHUB_TOKEN) {
+        console.log('[保存] 无GitHub Token，仅保存本地。');
+        return;
+    }
+    
+    // 防抖处理，避免频繁上传
+    if (Date.now() - lastSync < SYNC_INTERVAL) {
+        console.log('[保存] 本地保存完成，GitHub防抖中...');
+        return;
+    }
+    
+    console.log('[保存] 开始上传到GitHub...');
+    try {
+        console.log('[DEBUG] 尝试获取文件SHA...');
+        
+        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
+        const getResponse = await fetch(API_URL, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json' // ⭐️ 必须用这个！
+            }
+        });
+        
+        let sha = null;
+        if (getResponse.ok) {
+            const fileData = await getResponse.json();
+            console.log('[DEBUG] 获取到的文件数据:', fileData);
+            if (fileData && fileData.sha) {
+                sha = fileData.sha;
+                console.log('[DEBUG] 成功获取SHA:', sha);
+            } else {
+                console.warn('[DEBUG] 未从文件数据中获取到SHA，fileData:', fileData);
+            }
+        } else if (getResponse.status === 404) {
+            console.log('[DEBUG] 文件不存在，准备创建。');
+        } else {
+            // 添加此处的日志
+            console.error(`[DEBUG] 获取文件元数据失败: ${getResponse.status} ${getResponse.statusText}`);
+            const errorText = await getResponse.text(); // 尝试获取错误响应的文本
+            console.error('[DEBUG] 获取文件元数据失败详情:', errorText);
+            throw new Error(`获取文件元数据失败: ${getResponse.status}`); // 抛出错误以停止后续操作
+        }
+        
+        // ⭐️ 关键修复：动态构建请求体并进行Base64编码
+        const requestBody = {
+            message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
+            // 需要先encodeURIComponent处理UTF-8，再unescape，最后btoa进行base64编码
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
+        };
+        
+        // ⭐️ 只在 sha 存在时才添加（更新文件需要sha，创建文件不需要）
+        if (sha) {
+            requestBody.sha = sha;
+            console.log('[DEBUG] 添加SHA到请求体。');
+        } else {
+            console.log('[DEBUG] 不添加SHA，使用创建模式。');
+        }
+        
+        console.log('[DEBUG] 发送PUT请求...');
+        
+        const updateResponse = await fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json', // GitHub API期望这个Content-Type
+                 'Accept': 'application/vnd.github.v3+json' // 也可在此处添加Accept头
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (updateResponse.ok) {
+            console.log('✓ 数据已上传到GitHub');
+            lastSync = Date.now();
+        } else {
+            const errorData = await updateResponse.json();
+            console.error('✗ GitHub上传失败:', errorData.message);
+            // 可以根据errorData.errors进一步处理错误
+            throw new Error(`GitHub上传失败: ${errorData.message}`);
+        }
+    } catch(e) {
+        console.error('✗ 上传异常:', e.message);
+    }
+}
+
+// ==================== 初始化函数 ====================
+async function init() {
+    console.log('🚀 页面初始化中...');
+    
+    await loadData();
+    generateAllCages();
+    updateAllCages();
+    updateStats();
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('singleStartDate').value = today;
+    document.getElementById('batchStartDate').value = today;
+    
+    console.log('✓ 页面初始化完成');
+    
+    // 每隔一段时间自动同步
+    setInterval(async () => {
+        console.log('[定时] 自动同步GitHub数据...');
+        await loadData();
+        updateAllCages();
+        updateStats();
+    }, SYNC_INTERVAL);
+}
+
+// ==================== 笼位生成函数 ====================
+// Code for: function generateCagesForArea(containerId, rows, cols, type) {
+
+// Code for: function generateAllCages() {
+
+// Code for: function createCageElement(id, type, area) {
+
+// ==================== 批量模式函数 ====================
+// Code for: function function toggleBatchMode() {
+
+// Code for: function function toggleCageSelection(cageId) {
+
+// Code for: function function updateSelectionInfo() {
+
+// Code for: function function sortCageIds(cageIds) {
+
+// Code for: function function clearSelection() {
+
+// Code for: function function batchBookCages() {
+
+// ==================== 模态框函数 ====================
+// Code for: function function openSingleModal(cageId) {
+
+// Code for: function function closeSingleModal() {
+
+// Code for: function function closeBatchModal() {
+
+// ==================== 数据更新函数 ====================
+// Code for: function function updateCageDisplay(cageId) {
+
+// Code for: function function updateAllCages() {
+
+// Code for: function function updateStats() {
+
+// Code for: function function terminateSingleCage() {
+
+// Code for: function function exportData() {
+
+// Code for: function function clearAllData() {
 
 // ==================== 表单提交 ====================
 document.getElementById('singleCageForm').addEventListener('submit', function(e) {
