@@ -74,10 +74,12 @@ async function saveData() {
     console.log('[保存] 开始上传到GitHub...');
     try {
         console.log('[DEBUG] 尝试获取文件SHA...');
+        
+        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
+                'Accept': 'application/vnd.github.v3+json'  // ⭐️ 必须用这个！
             }
         });
         
