@@ -1,1 +1,10 @@
-{}
+{
+  "A1": {
+    "userName": "覃汉峰",
+    "startDate": "2026-03-05",
+    "endDate": "2026-10-15",
+    "animalType": "mouse",
+    "experimentDesc": "中大",
+    "lastUpdated": "2026-03-05T02:41:20.287Z"
+  }
+}
