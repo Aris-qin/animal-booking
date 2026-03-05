@@ -1,29 +1,46 @@
-function generateCagesForArea(containerId, rows, cols, type) {
-    const container = document.getElementById(containerId);
+// 字母表，用于生成笼位行号
+const rowLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+// ⭐️ 关键修复：定义区域配置，包括区域ID前缀和行字母起始索引
+const areaConfigs = [
+    { containerId: 'mice-area-a', areaName: '小鼠区1', prefix: '1', startRowCharIndex: 0, rows: 8, cols: 3, type: 'mouse' }, // 行从A开始，如 1-A1
+    { containerId: 'mice-area-b', areaName: '小鼠区2', prefix: '2', startRowCharIndex: 1, rows: 8, cols: 4, type: 'mouse' }, // 行从B开始，如 2-B1
+    { containerId: 'mice-area-c', areaName: '小鼠区3', prefix: '3', startRowCharIndex: 2, rows: 8, cols: 4, type: 'mouse' }, // 行从C开始，如 3-C1
+    { containerId: 'rats-area', areaName: '大鼠区', prefix: '4', startRowCharIndex: 3, rows: 5, cols: 3, type: 'rat' }    // 行从D开始，如 4-D1
+];
+
+// ⭐️ 修改generateCagesForArea函数以接收配置对象
+function generateCagesForArea(config) {
+    const container = document.getElementById(config.containerId);
+    if (!container) {
+        console.error(`Container with ID ${config.containerId} not found.`);
+        return;
+    }
     container.innerHTML = '';
-    const rowLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     
-    for (let row = 0; row < rows; row++) {
-        for (let col = 1; col <= cols; col++) {
-            const rowLetter = rowLetters[row];
-            const cageId = `${rowLetter}${col}`;
-            const cage = createCageElement(cageId, type, containerId);
+    for (let row = 0; row < config.rows; row++) {
+        for (let col = 1; col <= config.cols; col++) {
+            // 根据区域配置的起始索引生成行字母
+            const rowLetter = rowLetters[config.startRowCharIndex + row];
+            // ⭐️ 新的笼位ID格式：前缀-行字母列号 (例如: 1-A1)
+            const cageId = `${config.prefix}-${rowLetter}${col}`;
+            const cage = createCageElement(cageId, config.type, config.containerId);
             container.appendChild(cage);
         }
     }
 }
+
+// ⭐️ 修改generateAllCages函数以使用新的区域配置
 function generateAllCages() {
-    generateCagesForArea('mice-area-a', 8, 3, 'mouse');
-    generateCagesForArea('mice-area-b', 8, 4, 'mouse');
-    generateCagesForArea('mice-area-c', 8, 4, 'mouse');
-    generateCagesForArea('rats-area', 5, 3, 'rat');
+    areaConfigs.forEach(config => generateCagesForArea(config));
 }
+
 function createCageElement(id, type, area) {
     const cage = document.createElement('div');
     cage.className = 'cage';
     cage.dataset.cageId = id;
     cage.dataset.type = type;
-    cage.dataset.area = area;
+    cage.dataset.area = area; // 保持原有的区域ID，用于分类
     
     cage.innerHTML = `
         <div class="cage-label">${id}</div>
@@ -46,6 +63,7 @@ function createCageElement(id, type, area) {
     
     return cage;
 }
+
 function toggleBatchMode() {
     batchMode = !batchMode;
     const controls = document.getElementById('batchControls');
@@ -70,6 +88,7 @@ function toggleBatchMode() {
         clearSelection();
     }
 }
+
 function toggleCageSelection(cageId) {
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
     const data = cageData[cageId];
@@ -89,6 +108,7 @@ function toggleCageSelection(cageId) {
     
     updateSelectionInfo();
 }
+
 function updateSelectionInfo() {
     const info = document.getElementById('selectionInfo');
     const count = document.getElementById('selectedCount');
@@ -105,21 +125,49 @@ function updateSelectionInfo() {
         listContainer.innerHTML = '<span style="color: #999;">暂未选择任何笼位</span>';
     }
 }
+
+// ⭐️ 修改sortCageIds函数以解析新的笼位ID格式
 function sortCageIds(cageIds) {
     return cageIds.sort((a, b) => {
-        const matchA = a.match(/([A-Z]+)(\d+)/);
-        const matchB = b.match(/([A-Z]+)(\d+)/);
-        if (!matchA || !matchB) return 0;
-        
-        const rowA = matchA[1];
-        const colA = parseInt(matchA[2]);
-        const rowB = matchB[1];
-        const colB = parseInt(matchB[2]);
-        
-        if (rowA !== rowB) return rowA.localeCompare(rowB);
-        return colA - colB;
+        // 解析笼位ID，例如 "1-A1" -> { prefix: 1, rowChar: 'A', col: 1 }
+        const parseCageId = (id) => {
+            const parts = id.split('-'); // ["1", "A1"]
+            if (parts.length !== 2) return null; 
+
+            const prefix = parseInt(parts[0]); 
+            const rowCharCol = parts[1]; 
+
+            const match = rowCharCol.match(/([A-Z]+)(\d+)/); // 匹配字母和数字 (例如: "A", "1")
+            if (!match) return null;
+
+            const rowChar = match[1];
+            const col = parseInt(match[2]);
+            return { prefix, rowChar, col };
+        };
+
+        const parsedA = parseCageId(a);
+        const parsedB = parseCageId(b);
+
+        // 如果解析失败，则按原始字符串排序（不应发生）
+        if (!parsedA || !parsedB) {
+            return a.localeCompare(b);
+        }
+
+        // 首先按区域前缀排序 (1, 2, 3...)
+        if (parsedA.prefix !== parsedB.prefix) {
+            return parsedA.prefix - parsedB.prefix;
+        }
+
+        // 然后按行字母排序 (A, B, C...)
+        if (parsedA.rowChar !== parsedB.rowChar) {
+            return parsedA.rowChar.localeCompare(parsedB.rowChar);
+        }
+
+        // 最后按列号排序 (1, 2, 3...)
+        return parsedA.col - parsedB.col;
     });
 }
+
 function clearSelection() {
     selectedCages.forEach(cageId => {
         const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
@@ -128,6 +176,7 @@ function clearSelection() {
     selectedCages.clear();
     updateSelectionInfo();
 }
+
 function batchBookCages() {
     if (selectedCages.size === 0) {
         alert('请先选择要预约的笼位！');
@@ -136,6 +185,7 @@ function batchBookCages() {
     document.getElementById('batchModal').style.display = 'block';
     updateSelectionInfo();
 }
+
 function openSingleModal(cageId) {
     if (batchMode) return;
     
@@ -160,13 +210,16 @@ function openSingleModal(cageId) {
     
     modal.style.display = 'block';
 }
+
 function closeSingleModal() {
     document.getElementById('singleCageModal').style.display = 'none';
     currentEditingCage = null;
 }
+
 function closeBatchModal() {
     document.getElementById('batchModal').style.display = 'none';
 }
+
 function updateCageDisplay(cageId) {
     const data = cageData[cageId];
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
@@ -221,15 +274,19 @@ function updateCageDisplay(cageId) {
     durationFillElement.style.width = `${percentage}%`;
     durationFillElement.className = `duration-fill ${durationClass}`;
 }
+
 function updateAllCages() {
     document.querySelectorAll('.cage').forEach(cageElement => {
         const cageId = cageElement.dataset.cageId;
         updateCageDisplay(cageId);
     });
 }
+
+// ⭐️ 修改updateStats函数以动态计算总笼位数
 function updateStats() {
     let emptyCount = 0, occupiedCount = 0, longTermCount = 0;
-    const totalCages = (8 * 3) + (8 * 4) + (8 * 4) + (5 * 3);
+    // 动态计算所有区域的总笼位数
+    const totalCages = areaConfigs.reduce((sum, config) => sum + (config.rows * config.cols), 0);
     
     Object.keys(cageData).forEach(cageId => {
         const data = cageData[cageId];
@@ -251,6 +308,7 @@ function updateStats() {
     document.getElementById('statOccupied').textContent = occupiedCount;
     document.getElementById('statLong').textContent = longTermCount;
 }
+
 function terminateSingleCage() {
     if (currentEditingCage && confirm(`确定要终止笼位 ${currentEditingCage} 的占用吗？`)) {
         delete cageData[currentEditingCage];
@@ -261,6 +319,7 @@ function terminateSingleCage() {
         alert('笼位占用已终止！');
     }
 }
+
 function exportData() {
     const dataStr = JSON.stringify(cageData, null, 2);
     const dataBlob = new Blob([dataStr], {type: 'application/json; charset=utf-8'});
@@ -271,6 +330,7 @@ function exportData() {
     link.click();
     URL.revokeObjectURL(url);
 }
+
 function clearAllData() {
     if (confirm('确定要清空所有笼位数据吗？此操作不可恢复！')) {
         cageData = {};
@@ -281,6 +341,7 @@ function clearAllData() {
         alert('所有数据已清空！');
     }
 }
+
 // ==================== GitHub配置 ====================
 let GITHUB_USER = 'Aris-qin';
 let GITHUB_REPO = 'animal-booking';
@@ -297,7 +358,7 @@ if (!GITHUB_TOKEN) {
 }
 
 const DATA_FILE = 'cageData.json';
-// ⭐️ 关键修复：API_URL使用反引号
+// ⭐️ 修正：API_URL使用反引号
 const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
 
 // ==================== 全局变量 ====================
@@ -398,17 +459,15 @@ async function saveData() {
         } else if (getResponse.status === 404) {
             console.log('[DEBUG] 文件不存在，准备创建。');
         } else {
-            // 添加此处的日志
             console.error(`[DEBUG] 获取文件元数据失败: ${getResponse.status} ${getResponse.statusText}`);
-            const errorText = await getResponse.text(); // 尝试获取错误响应的文本
+            const errorText = await getResponse.text(); 
             console.error('[DEBUG] 获取文件元数据失败详情:', errorText);
-            throw new Error(`获取文件元数据失败: ${getResponse.status}`); // 抛出错误以停止后续操作
+            throw new Error(`获取文件元数据失败: ${getResponse.status}`); 
         }
         
         // ⭐️ 关键修复：动态构建请求体并进行Base64编码
         const requestBody = {
             message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-            // 需要先encodeURIComponent处理UTF-8，再unescape，最后btoa进行base64编码
             content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
         };
         
@@ -438,7 +497,6 @@ async function saveData() {
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message);
-            // 可以根据errorData.errors进一步处理错误
             throw new Error(`GitHub上传失败: ${errorData.message}`);
         }
     } catch(e) {
@@ -469,46 +527,6 @@ async function init() {
         updateStats();
     }, SYNC_INTERVAL);
 }
-
-// ==================== 笼位生成函数 ====================
-// Code for: function generateCagesForArea(containerId, rows, cols, type) {
-
-// Code for: function generateAllCages() {
-
-// Code for: function createCageElement(id, type, area) {
-
-// ==================== 批量模式函数 ====================
-// Code for: function function toggleBatchMode() {
-
-// Code for: function function toggleCageSelection(cageId) {
-
-// Code for: function function updateSelectionInfo() {
-
-// Code for: function function sortCageIds(cageIds) {
-
-// Code for: function function clearSelection() {
-
-// Code for: function function batchBookCages() {
-
-// ==================== 模态框函数 ====================
-// Code for: function function openSingleModal(cageId) {
-
-// Code for: function function closeSingleModal() {
-
-// Code for: function function closeBatchModal() {
-
-// ==================== 数据更新函数 ====================
-// Code for: function function updateCageDisplay(cageId) {
-
-// Code for: function function updateAllCages() {
-
-// Code for: function function updateStats() {
-
-// Code for: function function terminateSingleCage() {
-
-// Code for: function function exportData() {
-
-// Code for: function function clearAllData() {
 
 // ==================== 表单提交 ====================
 document.getElementById('singleCageForm').addEventListener('submit', function(e) {
