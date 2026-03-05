@@ -188,7 +188,15 @@
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
     "animalType": "mouse",
-    "experimentDesc": "造模给药",
+    "experimentDesc": "é æ¨¡ç»è¯",
     "lastUpdated": "2026-03-05T04:05:40.691Z"
+  },
+  "2-H4": {
+    "userName": "JJM",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "mouse",
+    "experimentDesc": "造模给药",
+    "lastUpdated": "2026-03-05T04:06:03.054Z"
   }
 }
