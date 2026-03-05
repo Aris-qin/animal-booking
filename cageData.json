@@ -102,5 +102,37 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:05:19.462Z"
+  },
+  "2-I4": {
+    "userName": "cxm",
+    "startDate": "2026-03-05",
+    "endDate": "2026-04-30",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:07:59.491Z"
+  },
+  "2-G3": {
+    "userName": "cxm",
+    "startDate": "2026-03-05",
+    "endDate": "2026-04-30",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:07:59.491Z"
+  },
+  "2-F3": {
+    "userName": "cxm",
+    "startDate": "2026-03-05",
+    "endDate": "2026-04-30",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:07:59.491Z"
+  },
+  "2-F4": {
+    "userName": "cxm",
+    "startDate": "2026-03-05",
+    "endDate": "2026-04-30",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:07:59.491Z"
   }
 }
