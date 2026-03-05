@@ -67,19 +67,17 @@ async function saveData() {
     }
     
     if (Date.now() - lastSync < 5000) {
-        console.log('[保存] GitHub防抖中...');
+        console.log('[保存] 本地保存完成，GitHub防抖中...');
         return;
     }
     
     console.log('[保存] 开始上传到GitHub...');
     try {
         console.log('[DEBUG] 尝试获取文件SHA...');
-        
-        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'  // ⭐️ 改成这个！
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
@@ -87,25 +85,21 @@ async function saveData() {
         if (getResponse.ok) {
             const fileData = await getResponse.json();
             console.log('[DEBUG] 获取到的文件数据:', fileData);
-            
-            // ⭐️ 正确的方式提取 sha
             if (fileData && fileData.sha) {
                 sha = fileData.sha;
                 console.log('[DEBUG] 成功获取SHA:', sha);
             }
         } else if (getResponse.status === 404) {
             console.log('[DEBUG] 文件不存在，准备创建');
-        } else {
-            console.log('[DEBUG] 获取SHA失败，状态码:', getResponse.status);
         }
         
-        // ⭐️ 构建请求体
+        // ⭐️ 关键修复：动态构建请求体
         const requestBody = {
             message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
             content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
         };
         
-        // ⭐️ 关键修复：只在 sha 存在时才添加
+        // ⭐️ 只在 sha 存在时才添加
         if (sha) {
             requestBody.sha = sha;
             console.log('[DEBUG] 添加SHA到请求体');
@@ -130,7 +124,6 @@ async function saveData() {
         } else {
             const errorData = await updateResponse.json();
             console.error('✗ GitHub上传失败:', errorData.message);
-            console.error('[DEBUG] 错误详情:', errorData);
         }
     } catch(e) {
         console.error('✗ 上传异常:', e.message);
