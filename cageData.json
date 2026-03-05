@@ -6,5 +6,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T02:49:40.734Z"
+  },
+  "2-I1": {
+    "userName": "qinhanfeng",
+    "startDate": "2026-03-05",
+    "endDate": "2026-10-21",
+    "animalType": "mouse",
+    "experimentDesc": "医院",
+    "lastUpdated": "2026-03-05T02:49:56.094Z"
   }
 }
