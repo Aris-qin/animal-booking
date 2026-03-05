@@ -134,5 +134,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:07:59.491Z"
+  },
+  "2-C4": {
+    "userName": "zn",
+    "startDate": "2026-03-05",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:12:35.421Z"
   }
 }
