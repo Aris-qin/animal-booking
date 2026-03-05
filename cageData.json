@@ -150,5 +150,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:12:44.889Z"
+  },
+  "2-E4": {
+    "userName": "zn",
+    "startDate": "2026-03-05",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T03:12:54.103Z"
   }
 }
