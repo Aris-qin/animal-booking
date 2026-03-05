@@ -1,10 +1,10 @@
 {
   "A1": {
-    "userName": "è¦æ±å³°",
+    "userName": "Ã¨Â¦ÂÃ¦Â±ÂÃ¥Â³Â°",
     "startDate": "2026-03-05",
     "endDate": "2026-10-15",
     "animalType": "mouse",
-    "experimentDesc": "ä¸­å¤§",
+    "experimentDesc": "Ã¤Â¸Â­Ã¥Â¤Â§",
     "lastUpdated": "2026-03-05T02:41:20.287Z"
   },
   "H1": {
@@ -14,5 +14,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T02:41:45.366Z"
+  },
+  "C2": {
+    "userName": "qinhanfeng",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-05",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T02:44:57.256Z"
   }
 }
