@@ -15,7 +15,8 @@ if (!GITHUB_TOKEN) {
 
 const DATA_FILE = 'cageData.json';
 const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
-
+//               ^                                                                                ^
+//               注意这里是反引号 (backticks)
 // ==================== 全局变量 ====================
 let cageData = {};
 let currentEditingCage = null;
