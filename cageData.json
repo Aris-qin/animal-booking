@@ -188,7 +188,7 @@
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
     "animalType": "mouse",
-    "experimentDesc": "Ã©ÂÂ Ã¦Â¨Â¡Ã§Â»ÂÃ¨ÂÂ¯",
+    "experimentDesc": "ÃÂ©ÃÂÃÂ ÃÂ¦ÃÂ¨ÃÂ¡ÃÂ§ÃÂ»ÃÂÃÂ¨ÃÂÃÂ¯",
     "lastUpdated": "2026-03-05T04:05:40.691Z"
   },
   "2-H4": {
@@ -196,15 +196,7 @@
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
     "animalType": "mouse",
-    "experimentDesc": "é æ¨¡ç»è¯",
+    "experimentDesc": "Ã©ÂÂ Ã¦Â¨Â¡Ã§Â»ÂÃ¨ÂÂ¯",
     "lastUpdated": "2026-03-05T04:06:03.054Z"
-  },
-  "3-C1": {
-    "userName": "GQ",
-    "startDate": "2026-03-05",
-    "endDate": "2026-05-01",
-    "animalType": "rat",
-    "experimentDesc": "",
-    "lastUpdated": "2026-03-05T06:57:49.635Z"
   }
 }
