@@ -83,16 +83,23 @@ async function saveData() {
             }
         });
         
-        let sha = null;
+           let sha = null;
         if (getResponse.ok) {
             const fileData = await getResponse.json();
             console.log('[DEBUG] 获取到的文件数据:', fileData);
             if (fileData && fileData.sha) {
                 sha = fileData.sha;
                 console.log('[DEBUG] 成功获取SHA:', sha);
+            } else {
+                console.warn('[DEBUG] 未从文件数据中获取到SHA，fileData:', fileData);
             }
         } else if (getResponse.status === 404) {
             console.log('[DEBUG] 文件不存在，准备创建');
+        } else {
+            // 添加此处的日志
+            console.error(`[DEBUG] 获取文件元数据失败: ${getResponse.status} ${getResponse.statusText}`);
+            const errorText = await getResponse.text(); // 尝试获取错误响应的文本
+            console.error('[DEBUG] 获取文件元数据失败详情:', errorText);
         }
         
         // ⭐️ 关键修复：动态构建请求体
