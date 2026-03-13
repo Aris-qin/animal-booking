@@ -326,5 +326,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T08:16:55.818Z"
+  },
+  "2-B4": {
+    "userName": "sj",
+    "startDate": "2026-03-16",
+    "endDate": "2026-04-20",
+    "animalType": "mouse",
+    "experimentDesc": "xxx",
+    "lastUpdated": "2026-03-13T01:14:03.647Z"
   }
 }
