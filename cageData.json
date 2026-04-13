@@ -414,5 +414,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-13T07:28:13.534Z"
+  },
+  "1-A3": {
+    "userName": "ZLS",
+    "startDate": "2026-04-13",
+    "endDate": "2026-09-01",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-04-13T07:28:31.434Z"
   }
 }
