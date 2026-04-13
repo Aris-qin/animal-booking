@@ -398,5 +398,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-13T04:27:04.228Z"
+  },
+  "1-A1": {
+    "userName": "张丽姗",
+    "startDate": "2026-04-13",
+    "endDate": "2026-09-01",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-04-13T07:27:01.530Z"
   }
 }
