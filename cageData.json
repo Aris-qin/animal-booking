@@ -454,5 +454,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-13T13:14:46.384Z"
+  },
+  "2-F1": {
+    "userName": "qinhanfeng",
+    "startDate": "2026-04-15",
+    "endDate": "2026-04-30",
+    "animalType": "mouse",
+    "experimentDesc": "硼药治疗",
+    "lastUpdated": "2026-04-15T09:24:13.651Z"
   }
 }
