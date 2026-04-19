@@ -351,14 +351,6 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-02T08:02:13.709Z"
   },
-  "1-D1": {
-    "userName": "LHY",
-    "startDate": "2026-04-02",
-    "endDate": "2026-05-01",
-    "animalType": "mouse",
-    "experimentDesc": "",
-    "lastUpdated": "2026-04-02T08:07:58.780Z"
-  },
   "1-D2": {
     "userName": "LHY",
     "startDate": "2026-04-02",
@@ -460,7 +452,7 @@
     "startDate": "2026-04-15",
     "endDate": "2026-04-30",
     "animalType": "mouse",
-    "experimentDesc": "硼药治疗",
+    "experimentDesc": "ç¡¼è¯æ²»ç",
     "lastUpdated": "2026-04-15T09:24:13.651Z"
   }
 }
