@@ -438,5 +438,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-20T09:45:59.264Z"
+  },
+  "1-H3": {
+    "userName": "zxt",
+    "startDate": "2026-04-20",
+    "endDate": "2026-05-05",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-04-20T10:00:43.235Z"
   }
 }
