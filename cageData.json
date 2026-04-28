@@ -448,11 +448,19 @@
     "lastUpdated": "2026-04-20T10:00:43.235Z"
   },
   "1-D1": {
-    "userName": "曹心萌",
+    "userName": "æ¹å¿è",
     "startDate": "2026-04-28",
     "endDate": "",
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:22:26.401Z"
+  },
+  "1-D2": {
+    "userName": "cxm",
+    "startDate": "2026-04-28",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-04-28T08:22:57.508Z"
   }
 }
