@@ -520,7 +520,7 @@
     "lastUpdated": "2026-05-12T02:03:16.513Z"
   },
   "2-C1": {
-    "userName": "åæ§",
+    "userName": "Ã¥ÂÂÃ¦ÂÂ§",
     "startDate": "2026-05-12",
     "endDate": "2026-09-30",
     "animalType": "mouse",
@@ -528,11 +528,19 @@
     "lastUpdated": "2026-05-12T02:03:45.816Z"
   },
   "2-C2": {
-    "userName": "冉慧",
+    "userName": "åæ§",
     "startDate": "2026-05-12",
     "endDate": "2026-08-31",
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T02:04:00.383Z"
+  },
+  "2-D1": {
+    "userName": "冉慧",
+    "startDate": "2026-05-12",
+    "endDate": "2026-08-31",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-05-12T02:04:14.002Z"
   }
 }
