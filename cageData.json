@@ -1,5 +1,5 @@
 {
-  "2-undefined1": {
+  "2-A1": {
     "userName": "qinhanfeng",
     "startDate": "2026-03-05",
     "endDate": "2026-10-21",
@@ -7,7 +7,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T02:49:40.734Z"
   },
-  "2-undefined3": {
+  "2-A3": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -15,7 +15,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:01:36.194Z"
   },
-  "2-undefined2": {
+  "2-A2": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -23,7 +23,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:02:30.827Z"
   },
-  "2-B2": {
+  "2-C2": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -31,7 +31,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:02:50.979Z"
   },
-  "2-B3": {
+  "2-C3": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -39,7 +39,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:02:58.449Z"
   },
-  "2-C3": {
+  "2-D3": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -47,7 +47,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:03:20.138Z"
   },
-  "2-C2": {
+  "2-D2": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -55,7 +55,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:03:12.584Z"
   },
-  "2-G3": {
+  "2-H3": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -63,7 +63,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:03:59.642Z"
   },
-  "2-G2": {
+  "2-H2": {
     "userName": "zxt",
     "startDate": "2026-05-05",
     "endDate": "2026-07-20",
@@ -71,7 +71,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:03:42.011Z"
   },
-  "2-G1": {
+  "2-H1": {
     "userName": "qinhanfeng",
     "startDate": "2026-03-05",
     "endDate": "2026-10-21",
@@ -95,7 +95,7 @@
     "experimentDesc": "xxx",
     "lastUpdated": "2026-05-12T01:52:04.196Z"
   },
-  "2-G4": {
+  "2-H4": {
     "userName": "cxm",
     "startDate": "2026-03-05",
     "endDate": "2026-07-30",
@@ -103,7 +103,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:17:39.018Z"
   },
-  "2-E3": {
+  "2-F3": {
     "userName": "cxm",
     "startDate": "2026-03-05",
     "endDate": "2026-07-30",
@@ -111,7 +111,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:17:18.895Z"
   },
-  "2-D3": {
+  "2-E3": {
     "userName": "cxm",
     "startDate": "2026-03-05",
     "endDate": "2026-07-30",
@@ -119,7 +119,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:16:50.930Z"
   },
-  "2-D4": {
+  "2-E4": {
     "userName": "cxm",
     "startDate": "2026-03-05",
     "endDate": "2026-07-30",
@@ -127,7 +127,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:17:03.457Z"
   },
-  "2-A4": {
+  "2-B4": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -135,7 +135,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:12:35.421Z"
   },
-  "2-B4": {
+  "2-C4": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -143,7 +143,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:12:44.889Z"
   },
-  "2-C4": {
+  "2-D4": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -151,7 +151,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:12:54.103Z"
   },
-  "2-D2": {
+  "2-E2": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -159,7 +159,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:13:34.321Z"
   },
-  "2-E2": {
+  "2-F2": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -167,7 +167,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:13:47.741Z"
   },
-  "2-F1": {
+  "2-G1": {
     "userName": "zn",
     "startDate": "2026-03-05",
     "endDate": "",
@@ -175,7 +175,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T03:14:04.835Z"
   },
-  "2-F3": {
+  "2-G3": {
     "userName": "JJM",
     "startDate": "2026-03-05",
     "endDate": "2026-07-15",
@@ -183,7 +183,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-14T08:41:16.443Z"
   },
-  "2-F4": {
+  "2-G4": {
     "userName": "JJM",
     "startDate": "2026-03-05",
     "endDate": "2026-07-15",
@@ -191,7 +191,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-14T08:41:25.091Z"
   },
-  "4-undefined1": {
+  "4-D1": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -199,7 +199,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-undefined2": {
+  "4-D2": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -207,7 +207,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-undefined3": {
+  "4-D3": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -215,7 +215,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-A1": {
+  "4-E1": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -223,7 +223,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-A2": {
+  "4-E2": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -231,7 +231,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-A3": {
+  "4-E3": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -239,7 +239,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-B1": {
+  "4-F1": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -247,7 +247,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-B2": {
+  "4-F2": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -255,7 +255,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "4-B3": {
+  "4-F3": {
     "userName": "GQ ",
     "startDate": "2026-03-05",
     "endDate": "2026-05-15",
@@ -263,7 +263,55 @@
     "experimentDesc": "",
     "lastUpdated": "2026-03-05T06:59:02.703Z"
   },
-  "2-C1": {
+  "4-G1": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "4-G2": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "4-G3": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "4-H1": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "4-H2": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "4-H3": {
+    "userName": "GQ ",
+    "startDate": "2026-03-05",
+    "endDate": "2026-05-15",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-03-05T06:59:02.703Z"
+  },
+  "2-D1": {
     "userName": "sj",
     "startDate": "2026-03-15",
     "endDate": "2026-06-30",
@@ -271,7 +319,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T01:51:22.268Z"
   },
-  "2-undefined4": {
+  "2-A4": {
     "userName": "sj",
     "startDate": "2026-03-16",
     "endDate": "2026-06-30",
@@ -367,7 +415,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-13T13:14:46.384Z"
   },
-  "2-D1": {
+  "2-E1": {
     "userName": "qinhanfeng",
     "startDate": "2026-04-15",
     "endDate": "2026-04-30",
@@ -375,7 +423,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-19T12:31:23.071Z"
   },
-  "2-E4": {
+  "2-F4": {
     "userName": "zxt",
     "startDate": "2026-04-20",
     "endDate": "2026-07-20",
@@ -383,7 +431,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T15:03:30.866Z"
   },
-  "2-A3": {
+  "2-B3": {
     "userName": "zxt",
     "startDate": "2026-04-20",
     "endDate": "2026-07-20",
@@ -423,7 +471,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:24:03.999Z"
   },
-  "2-F2": {
+  "2-G2": {
     "userName": "cxm",
     "startDate": "2026-04-28",
     "endDate": "",
@@ -463,7 +511,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T01:59:34.902Z"
   },
-  "2-E1": {
+  "2-F1": {
     "userName": "qhf",
     "startDate": "2026-05-12",
     "endDate": "2026-07-29",
@@ -471,7 +519,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T02:03:16.513Z"
   },
-  "2-A1": {
+  "2-B1": {
     "userName": "ZXT",
     "startDate": "2026-05-12",
     "endDate": "2026-09-30",
@@ -479,7 +527,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T02:03:45.816Z"
   },
-  "2-A2": {
+  "2-B2": {
     "userName": "ZXT",
     "startDate": "2026-05-12",
     "endDate": "2026-08-31",
@@ -487,7 +535,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T02:04:00.383Z"
   },
-  "2-B1": {
+  "2-C1": {
     "userName": "ZXT",
     "startDate": "2026-05-12",
     "endDate": "2026-08-31",
@@ -495,7 +543,7 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-12T02:04:14.002Z"
   },
-  "1-G3": {
+  "1-F3": {
     "userName": "gq",
     "startDate": "2026-05-13",
     "endDate": "2026-06-13",
@@ -510,13 +558,5 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-05-13T03:03:51.754Z"
-  },
-  "3-undefined1": {
-    "userName": "覃汉峰",
-    "startDate": "2026-05-14",
-    "endDate": "2026-05-16",
-    "animalType": "rat",
-    "experimentDesc": "",
-    "lastUpdated": "2026-05-14T09:07:35.262Z"
   }
 }
