@@ -64,12 +64,12 @@
     "lastUpdated": "2026-05-05T15:03:59.642Z"
   },
   "2-H2": {
-    "userName": "zxt",
-    "startDate": "2026-05-05",
-    "endDate": "2026-07-20",
+    "userName": "cxm",
+    "startDate": "2026-04-28",
+    "endDate": "",
     "animalType": "mouse",
     "experimentDesc": "",
-    "lastUpdated": "2026-05-05T15:03:42.011Z"
+    "lastUpdated": "2026-04-28T08:27:16.747Z"
   },
   "2-H1": {
     "userName": "qinhanfeng",
@@ -344,12 +344,12 @@
     "lastUpdated": "2026-04-07T07:55:29.357Z"
   },
   "1-F3": {
-    "userName": "xwx",
-    "startDate": "2026-04-13",
-    "endDate": "2026-04-22",
+    "userName": "zxt",
+    "startDate": "2026-04-20",
+    "endDate": "2026-06-30",
     "animalType": "mouse",
     "experimentDesc": "",
-    "lastUpdated": "2026-04-13T04:26:50.495Z"
+    "lastUpdated": "2026-05-05T14:59:01.551Z"
   },
   "1-E2": {
     "userName": "xwx",
@@ -439,14 +439,6 @@
     "experimentDesc": "",
     "lastUpdated": "2026-05-05T14:59:33.357Z"
   },
-  "1-F3": {
-    "userName": "zxt",
-    "startDate": "2026-04-20",
-    "endDate": "2026-06-30",
-    "animalType": "mouse",
-    "experimentDesc": "",
-    "lastUpdated": "2026-05-05T14:59:01.551Z"
-  },
   "1-D1": {
     "userName": "cxm",
     "startDate": "2026-04-28",
@@ -470,14 +462,6 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-04-28T08:24:03.999Z"
-  },
-  "2-H2": {
-    "userName": "cxm",
-    "startDate": "2026-04-28",
-    "endDate": "",
-    "animalType": "mouse",
-    "experimentDesc": "",
-    "lastUpdated": "2026-04-28T08:27:16.747Z"
   },
   "1-G1": {
     "userName": "sj",
@@ -558,5 +542,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-05-13T03:03:51.754Z"
+  },
+  "3-A1": {
+    "userName": "覃汉峰",
+    "startDate": "2026-05-14",
+    "endDate": "2026-05-16",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-05-14T13:04:46.207Z"
   }
 }
