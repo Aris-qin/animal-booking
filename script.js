@@ -2,12 +2,126 @@
 const rowLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 // ⭐️ 关键修复：定义区域配置，包括区域ID前缀和行字母起始索引
+// 此次修改将所有区域的startRowCharIndex都设为0，使所有区域的行都从'A'开始
 const areaConfigs = [
     { containerId: 'mice-area-a', areaName: '小鼠区1', prefix: '1', startRowCharIndex: 0, rows: 8, cols: 3, type: 'mouse' }, // 行从A开始，如 1-A1
-    { containerId: 'mice-area-b', areaName: '小鼠区2', prefix: '2', startRowCharIndex: 1, rows: 8, cols: 4, type: 'mouse' }, // 行从B开始，如 2-B1
-    { containerId: 'mice-area-c', areaName: '小鼠区3', prefix: '3', startRowCharIndex: 2, rows: 8, cols: 4, type: 'mouse' }, // 行从C开始，如 3-C1
-    { containerId: 'rats-area', areaName: '大鼠区', prefix: '4', startRowCharIndex: 3, rows: 5, cols: 3, type: 'rat' }    // 行从D开始，如 4-D1
+    { containerId: 'mice-area-b', areaName: '小鼠区2', prefix: '2', startRowCharIndex: 0, rows: 8, cols: 4, type: 'mouse' }, // 行从A开始，如 2-A1
+    { containerId: 'mice-area-c', areaName: '小鼠区3', prefix: '3', startRowCharIndex: 0, rows: 8, cols: 4, type: 'mouse' }, // 行从A开始，如 3-A1
+    { containerId: 'rats-area', areaName: '大鼠区', prefix: '4', startRowCharIndex: 0, rows: 5, cols: 3, type: 'rat' }    // 行从A开始，如 4-A1
 ];
+
+// ⭐️ 新增：定义旧的区域配置映射，用于数据迁移
+const oldAreaConfigsMapForMigration = {
+    '1': { prefix: '1', startRowCharIndex: 0 },
+    '2': { prefix: '2', startRowCharIndex: 1 }, // 旧的 '小鼠区2' (prefix '2') 行从 'B' (index 1) 开始
+    '3': { prefix: '3', startRowCharIndex: 2 }, // 旧的 '小鼠区3' (prefix '3') 行从 'C' (index 2) 开始
+    '4': { prefix: '4', startRowCharIndex: 3 }  // 旧的 '大鼠区' (prefix '4') 行从 'D' (index 3) 开始
+};
+
+// ⭐️ 新增：定义新的区域配置映射，用于数据迁移
+const newAreaConfigsMapForMigration = {
+    '1': { prefix: '1', startRowCharIndex: 0 },
+    '2': { prefix: '2', startRowCharIndex: 0 }, // 新的 '小鼠区2' (prefix '2') 行从 'A' (index 0) 开始
+    '3': { prefix: '3', startRowCharIndex: 0 }, // 新的 '小鼠区3' (prefix '3') 行从 'A' (index 0) 开始
+    '4': { prefix: '4', startRowCharIndex: 0 }  // 新的 '大鼠区' (prefix '4') 行从 'A' (index 0) 开始
+};
+
+// ⭐️ 新增：数据迁移函数，用于将旧的笼位ID格式转换为新格式
+function migrateCageDataKeys(currentCageData) {
+    const migratedData = {};
+    let migrationOccurred = false;
+
+    for (const oldCageId in currentCageData) {
+        if (!Object.prototype.hasOwnProperty.call(currentCageData, oldCageId)) continue;
+
+        const data = currentCageData[oldCageId];
+        const parts = oldCageId.split('-'); // e.g., "2-B1" -> ["2", "B1"]
+
+        if (parts.length === 2) {
+            const prefix = parts[0]; // "2"
+            const rowColPart = parts[1]; // "B1"
+            const match = rowColPart.match(/([A-Z]+)(\d+)/); // e.g., ["B1", "B", "1"]
+
+            if (match) {
+                const oldRowChar = match[1]; // "B"
+                const colNum = match[2]; // "1"
+
+                const oldConfig = oldAreaConfigsMapForMigration[prefix];
+                const newConfig = newAreaConfigsMapForMigration[prefix];
+
+                // 只有当旧配置和新配置都存在，并且旧的起始行索引与新的不同时才需要进行迁移判断
+                if (oldConfig && newConfig && oldConfig.startRowCharIndex !== newConfig.startRowCharIndex) {
+                    const oldRowCharIndexInAlphabet = rowLetters.indexOf(oldRowChar); 
+                    
+                    // 计算该行字母在其旧区域起始点处的相对索引 (例如，旧的B是起始B的第0行)
+                    const relativeRowIndex = oldRowCharIndexInAlphabet - oldConfig.startRowCharIndex; 
+
+                    // 将该相对索引应用到新区域的起始点 (例如，新的A是起始A的第0行，那么相对0行就是新的A)
+                    const newRowCharIndexInAlphabet = newConfig.startRowCharIndex + relativeRowIndex; 
+                    const newRowChar = rowLetters[newRowCharIndexInAlphabet]; 
+
+                    const newCageId = `${prefix}-${newRowChar}${colNum}`; 
+
+                    if (newCageId !== oldCageId) {
+                        console.log(`[数据迁移] 将笼位ID "${oldCageId}" 迁移至 "${newCageId}"`);
+                        migratedData[newCageId] = data;
+                        migrationOccurred = true;
+                    } else {
+                        migratedData[oldCageId] = data; // 理论上不会发生，但以防万一
+                    }
+                } else {
+                    migratedData[oldCageId] = data; // 不需要迁移，或者配置不匹配，保持原样
+                }
+            } else {
+                console.warn(`[数据迁移] 无法解析笼位ID的行/列部分 "${rowColPart}"，跳过ID "${oldCageId}" 迁移。`);
+                migratedData[oldCageId] = data;
+            }
+        } else {
+            console.warn(`[数据迁移] 笼位ID格式不符 (缺少前缀或连字符) "${oldCageId}"，跳过迁移。`);
+            migratedData[oldCageId] = data;
+        }
+    }
+    
+    if (migrationOccurred) {
+        console.log('[数据迁移] 迁移完成，新数据:', migratedData);
+    } else {
+        console.log('[数据迁移] 未发生ID迁移。');
+    }
+    return migratedData;
+}
+
+
+// ⭐️ 替换旧的编码函数，使用更可靠的UTF-8 Base64编码
+function utf8ToBase64(str) {
+    // 1. 将字符串编码为UTF-8，然后进行URL编码（例如 "你好" -> "%E4%BD%A0%E5%A5%BD"）
+    const utf8Encoded = encodeURIComponent(str);
+    
+    // 2. 将 %XX 序列转换为原始字节（字符码 0-255）
+    //    例如 "%E4" -> charCode 228
+    const bytes = utf8Encoded.replace(/%([0-9A-F]{2})/g, 
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        });
+    
+    // 3. 对字节字符串进行Base64编码
+    return btoa(bytes);
+}
+
+// ⭐️ 替换旧的解码函数，使用更可靠的UTF-8 Base64解码
+function base64ToUtf8(b64) {
+    // 1. Base64解码为字节字符串（字符码 0-255）
+    const bytes = atob(b64);
+    
+    // 2. 将字节转换回 %XX 序列
+    //    例如 charCode 228 -> "%E4"
+    const utf8Encoded = bytes.split('').map(function toPercentEncoded(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join('');
+    
+    // 3. 进行URL解码，获取原始UTF-8字符串
+    return decodeURIComponent(utf8Encoded);
+}
+
 
 // ⭐️ 修改generateCagesForArea函数以接收配置对象
 function generateCagesForArea(config) {
@@ -20,7 +134,7 @@ function generateCagesForArea(config) {
     
     for (let row = 0; row < config.rows; row++) {
         for (let col = 1; col <= config.cols; col++) {
-            // 根据区域配置的起始索引生成行字母
+            // 根据区域配置的起始索引生成行字母 (现在都从A开始)
             const rowLetter = rowLetters[config.startRowCharIndex + row];
             // ⭐️ 新的笼位ID格式：前缀-行字母列号 (例如: 1-A1)
             const cageId = `${config.prefix}-${rowLetter}${col}`;
@@ -40,7 +154,7 @@ function createCageElement(id, type, area) {
     cage.className = 'cage';
     cage.dataset.cageId = id;
     cage.dataset.type = type;
-    cage.dataset.area = area; // 保持原有的区域ID，用于分类
+    cage.dataset.area = area; 
     
     cage.innerHTML = `
         <div class="cage-label">${id}</div>
@@ -358,7 +472,6 @@ if (!GITHUB_TOKEN) {
 }
 
 const DATA_FILE = 'cageData.json';
-// ⭐️ 修正：API_URL使用反引号
 const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${DATA_FILE}`;
 
 // ==================== 全局变量 ====================
@@ -384,7 +497,6 @@ async function loadData() {
         const response = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                // ⭐️ 关键修复：GET请求需要这个Accept头来获取文件元数据（包括sha）
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
@@ -400,14 +512,20 @@ async function loadData() {
             throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
         }
         
-        const fileData = await response.json(); // fileData现在是包含sha、content等的对象
+        const fileData = await response.json(); 
         console.log('[DEBUG] loadData 获取到的文件元数据:', fileData);
 
         if (fileData && fileData.content) {
-            // ⭐️ 关键修复：需要base64解码内容
-            const decodedContent = atob(fileData.content);
+            // ⭐️ 关键修复：使用新的UTF-8 Base64解码函数
+            console.log('[DEBUG] loadData 原始Base64内容:', fileData.content);
+            const decodedContent = base64ToUtf8(fileData.content);
+            console.log('[DEBUG] loadData 解码后的内容:', decodedContent); 
             cageData = JSON.parse(decodedContent) || {};
             console.log('✓ 从GitHub加载数据成功并解码');
+            
+            // ⭐️ 关键修复：加载数据后执行ID迁移
+            cageData = migrateCageDataKeys(cageData);
+
         } else {
             console.warn('未能从GitHub文件数据中获取到有效内容，初始化为空。', fileData);
             cageData = {};
@@ -438,11 +556,10 @@ async function saveData() {
     try {
         console.log('[DEBUG] 尝试获取文件SHA...');
         
-        // ⭐️ 关键修复：使用正确的 Accept 头获取文件元数据
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json' // ⭐️ 必须用这个！
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
@@ -465,13 +582,17 @@ async function saveData() {
             throw new Error(`获取文件元数据失败: ${getResponse.status}`); 
         }
         
-        // ⭐️ 关键修复：动态构建请求体并进行Base64编码
+        // ⭐️ 关键修复：使用新的UTF-8 Base64编码函数
+        const rawJsonContent = JSON.stringify(cageData, null, 2);
+        console.log('[DEBUG] saveData 原始JSON内容:', rawJsonContent); 
+        const base64Content = utf8ToBase64(rawJsonContent);
+        console.log('[DEBUG] saveData Base64编码后内容:', base64Content); 
+
         const requestBody = {
             message: `🔄 更新笼位数据 ${new Date().toLocaleString('zh-CN')}`,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(cageData, null, 2))))
+            content: base64Content
         };
         
-        // ⭐️ 只在 sha 存在时才添加（更新文件需要sha，创建文件不需要）
         if (sha) {
             requestBody.sha = sha;
             console.log('[DEBUG] 添加SHA到请求体。');
@@ -485,8 +606,8 @@ async function saveData() {
             method: 'PUT',
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
-                'Content-Type': 'application/json', // GitHub API期望这个Content-Type
-                 'Accept': 'application/vnd.github.v3+json' // 也可在此处添加Accept头
+                'Content-Type': 'application/json', 
+                 'Accept': 'application/vnd.github.v3+json' 
             },
             body: JSON.stringify(requestBody)
         });
