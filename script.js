@@ -1,21 +1,56 @@
-// ==================== 字母表和区域配置 ====================
+// ==================== 基础配置 ====================
+
+// 字母表，用于生成行号
 const rowLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
-// 区域配置：保持当前笼位编号规则，不再做任何编号迁移
+// 区域配置：固定笼位ID，不再动态迁移
 const areaConfigs = [
-    { containerId: 'mice-area-a', areaName: '小鼠区1', prefix: '1', startRowCharIndex: 0, rows: 8, cols: 3, type: 'mouse' },
-    { containerId: 'mice-area-b', areaName: '小鼠区2', prefix: '2', startRowCharIndex: 0, rows: 8, cols: 4, type: 'mouse' },
-    { containerId: 'mice-area-c', areaName: '小鼠区3', prefix: '3', startRowCharIndex: 0, rows: 8, cols: 4, type: 'mouse' },
-    { containerId: 'rats-area', areaName: '大鼠区', prefix: '4', startRowCharIndex: 0, rows: 5, cols: 3, type: 'rat' }
+    {
+        containerId: 'mice-area-a',
+        areaName: '小鼠区域A',
+        prefix: '1',
+        rows: 8,
+        cols: 3,
+        type: 'mouse'
+    },
+    {
+        containerId: 'mice-area-b',
+        areaName: '小鼠区域B',
+        prefix: '2',
+        rows: 8,
+        cols: 4,
+        type: 'mouse'
+    },
+    {
+        containerId: 'mice-area-c',
+        areaName: '小鼠区域C',
+        prefix: '3',
+        rows: 8,
+        cols: 4,
+        type: 'mouse'
+    },
+    {
+        containerId: 'rats-area',
+        areaName: '大鼠区域',
+        prefix: '4',
+        rows: 5,
+        cols: 3,
+        type: 'rat'
+    }
 ];
 
-// ==================== GitHub配置 ====================
+// GitHub配置
 let GITHUB_USER = 'Aris-qin';
 let GITHUB_REPO = 'animal-booking';
 let GITHUB_TOKEN = localStorage.getItem('github_token') || null;
 
 if (!GITHUB_TOKEN) {
-    GITHUB_TOKEN = prompt('请输入你的 GitHub Personal Access Token:\n(从 https://github.com/settings/tokens 获取)');
+    GITHUB_TOKEN = prompt(
+        '请输入你的 GitHub Personal Access Token:\n' +
+        '(从 https://github.com/settings/tokens 获取)\n\n' +
+        '如果取消，将只使用本地存储。'
+    );
+
     if (GITHUB_TOKEN) {
         localStorage.setItem('github_token', GITHUB_TOKEN);
     } else {
@@ -29,46 +64,124 @@ const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/cont
 const SYNC_INTERVAL = 5000;
 
 // ==================== 全局变量 ====================
+
 let cageData = {};
 let currentEditingCage = null;
 let batchMode = false;
 let selectedCages = new Set();
 let lastSync = 0;
+let isSaving = false;
 
-// ==================== UTF-8 Base64 编解码，修复中文乱码 ====================
+// ==================== 工具函数 ====================
+
+// UTF-8 转 Base64，支持中文
 function utf8ToBase64(str) {
     const bytes = new TextEncoder().encode(str);
     let binary = '';
-
     bytes.forEach(byte => {
         binary += String.fromCharCode(byte);
     });
-
     return btoa(binary);
 }
 
+// Base64 转 UTF-8，支持中文
 function base64ToUtf8(b64) {
-    const cleanBase64 = b64.replace(/\s/g, '');
+    const cleanBase64 = b64.replace(/\n/g, '').replace(/\r/g, '');
     const binary = atob(cleanBase64);
-    const bytes = new Uint8Array(binary.length);
-
-    for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
     return new TextDecoder('utf-8').decode(bytes);
 }
 
-// ==================== GitHub数据操作 ====================
+// 生成所有合法笼位ID集合
+function getValidCageIdSet() {
+    const validIds = new Set();
+
+    areaConfigs.forEach(config => {
+        for (let row = 0; row < config.rows; row++) {
+            const rowLetter = rowLetters[row];
+
+            for (let col = 1; col <= config.cols; col++) {
+                validIds.add(`${config.prefix}-${rowLetter}${col}`);
+            }
+        }
+    });
+
+    return validIds;
+}
+
+// 获取笼位所在区域配置
+function getAreaConfigByCageId(cageId) {
+    const prefix = String(cageId).split('-')[0];
+    return areaConfigs.find(config => config.prefix === prefix) || null;
+}
+
+// 校验笼位ID是否存在
+function isValidCageId(cageId) {
+    return getValidCageIdSet().has(cageId);
+}
+
+// 清理JSON中不存在的笼位数据
+function sanitizeCageData(rawData) {
+    const validIds = getValidCageIdSet();
+    const cleaned = {};
+
+    Object.keys(rawData || {}).forEach(cageId => {
+        if (validIds.has(cageId)) {
+            cleaned[cageId] = rawData[cageId];
+        } else {
+            console.warn(`[数据清理] 忽略不存在的笼位ID: ${cageId}`);
+        }
+    });
+
+    return cleaned;
+}
+
+// 排序笼位ID
+function sortCageIds(cageIds) {
+    return cageIds.sort((a, b) => {
+        const parseCageId = id => {
+            const parts = String(id).split('-');
+            if (parts.length !== 2) return null;
+
+            const prefix = parseInt(parts[0], 10);
+            const match = parts[1].match(/^([A-Z]+)(\d+)$/);
+            if (!match) return null;
+
+            return {
+                prefix,
+                rowChar: match[1],
+                col: parseInt(match[2], 10)
+            };
+        };
+
+        const pa = parseCageId(a);
+        const pb = parseCageId(b);
+
+        if (!pa || !pb) return String(a).localeCompare(String(b));
+
+        if (pa.prefix !== pb.prefix) {
+            return pa.prefix - pb.prefix;
+        }
+
+        if (pa.rowChar !== pb.rowChar) {
+            return pa.rowChar.localeCompare(pb.rowChar);
+        }
+
+        return pa.col - pb.col;
+    });
+}
+
+// ==================== GitHub 数据操作 ====================
+
 async function loadData() {
-    console.log('[加载] 从GitHub获取数据...');
+    console.log('[加载] 开始加载数据...');
 
     try {
         if (!GITHUB_TOKEN) {
-            console.warn('未提供 GitHub Token，将使用本地缓存加载数据。');
             const cached = localStorage.getItem('cageData');
             cageData = cached ? JSON.parse(cached) : {};
-            console.log('✓ 从本地缓存加载数据成功');
+            cageData = sanitizeCageData(cageData);
+            console.log('✓ 从本地缓存加载数据');
             return;
         }
 
@@ -80,61 +193,73 @@ async function loadData() {
         });
 
         if (response.status === 404) {
-            console.log('GitHub 上 cageData.json 不存在，初始化为空。');
+            console.log('[加载] GitHub数据文件不存在，初始化为空');
             cageData = {};
+            localStorage.setItem('cageData', JSON.stringify(cageData));
             return;
         }
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+            throw new Error(`GitHub API错误: ${response.status} - ${errorText}`);
         }
 
         const fileData = await response.json();
 
-        if (fileData && fileData.content) {
-            const decodedContent = base64ToUtf8(fileData.content);
+        if (!fileData || !fileData.content) {
+            cageData = {};
+            return;
+        }
 
-            try {
-                cageData = JSON.parse(decodedContent) || {};
-                console.log('✓ 从GitHub加载数据成功');
+        const decodedContent = base64ToUtf8(fileData.content);
+        const parsedData = JSON.parse(decodedContent || '{}');
 
-                // 重要：这里不再迁移、不再修改笼位编号，保留 JSON 中原始 key
-                localStorage.setItem('cageData', JSON.stringify(cageData));
-            } catch (jsonError) {
-                console.error('✗ JSON解析失败:', jsonError);
-                throw jsonError;
-            }
-        } else {
-            console.warn('GitHub 文件内容为空，初始化为空。');
+        // 关键：这里只清理非法ID，不再迁移行号
+        cageData = sanitizeCageData(parsedData);
+
+        localStorage.setItem('cageData', JSON.stringify(cageData));
+
+        console.log('✓ 从GitHub加载数据成功');
+
+    } catch (e) {
+        console.error('✗ GitHub加载失败:', e);
+
+        try {
+            const cached = localStorage.getItem('cageData');
+            cageData = cached ? JSON.parse(cached) : {};
+            cageData = sanitizeCageData(cageData);
+            console.log('✓ 使用本地缓存数据');
+        } catch (cacheError) {
+            console.error('✗ 本地缓存也无法读取:', cacheError);
             cageData = {};
         }
-    } catch (e) {
-        console.error('✗ GitHub加载失败:', e.message);
-
-        const cached = localStorage.getItem('cageData');
-        cageData = cached ? JSON.parse(cached) : {};
-
-        console.log('已使用本地缓存数据');
     }
 }
 
-async function saveData() {
+async function saveData(force = false) {
+    cageData = sanitizeCageData(cageData);
     localStorage.setItem('cageData', JSON.stringify(cageData));
 
     if (!GITHUB_TOKEN) {
-        console.log('[保存] 无GitHub Token，仅保存本地。');
+        console.log('[保存] 无GitHub Token，仅保存到本地');
         return;
     }
 
-    if (Date.now() - lastSync < SYNC_INTERVAL) {
-        console.log('[保存] 本地保存完成，GitHub防抖中...');
+    if (!force && Date.now() - lastSync < SYNC_INTERVAL) {
+        console.log('[保存] 本地已保存，GitHub上传防抖中');
         return;
     }
 
-    console.log('[保存] 开始上传到GitHub...');
+    if (isSaving) {
+        console.log('[保存] 当前已有保存任务，跳过本次');
+        return;
+    }
+
+    isSaving = true;
 
     try {
+        console.log('[保存] 开始上传到GitHub...');
+
         const getResponse = await fetch(API_URL, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
@@ -147,11 +272,9 @@ async function saveData() {
         if (getResponse.ok) {
             const fileData = await getResponse.json();
             sha = fileData.sha || null;
-        } else if (getResponse.status === 404) {
-            console.log('GitHub 上文件不存在，将创建新文件。');
-        } else {
+        } else if (getResponse.status !== 404) {
             const errorText = await getResponse.text();
-            throw new Error(`获取文件元数据失败: ${getResponse.status} - ${errorText}`);
+            throw new Error(`获取GitHub文件SHA失败: ${getResponse.status} - ${errorText}`);
         }
 
         const rawJsonContent = JSON.stringify(cageData, null, 2);
@@ -176,47 +299,23 @@ async function saveData() {
             body: JSON.stringify(requestBody)
         });
 
-        if (updateResponse.ok) {
-            console.log('✓ 数据已上传到GitHub');
-            lastSync = Date.now();
-        } else {
+        if (!updateResponse.ok) {
             const errorData = await updateResponse.json();
-            throw new Error(`GitHub上传失败: ${errorData.message}`);
+            throw new Error(errorData.message || 'GitHub上传失败');
         }
+
+        lastSync = Date.now();
+        console.log('✓ 数据已上传到GitHub');
+
     } catch (e) {
-        console.error('✗ 上传异常:', e.message);
+        console.error('✗ GitHub保存失败:', e);
+    } finally {
+        isSaving = false;
     }
 }
 
-// ==================== 初始化函数 ====================
-async function init() {
-    console.log('页面初始化中...');
+// ==================== 笼位生成 ====================
 
-    await loadData();
-
-    generateAllCages();
-    updateAllCages();
-    updateStats();
-
-    const today = new Date().toISOString().split('T')[0];
-
-    const singleStartDate = document.getElementById('singleStartDate');
-    const batchStartDate = document.getElementById('batchStartDate');
-
-    if (singleStartDate) singleStartDate.value = today;
-    if (batchStartDate) batchStartDate.value = today;
-
-    console.log('✓ 页面初始化完成');
-
-    setInterval(async () => {
-        console.log('[定时] 自动同步GitHub数据...');
-        await loadData();
-        updateAllCages();
-        updateStats();
-    }, SYNC_INTERVAL);
-}
-
-// ==================== 笼位生成函数 ====================
 function generateAllCages() {
     areaConfigs.forEach(config => generateCagesForArea(config));
 }
@@ -225,15 +324,16 @@ function generateCagesForArea(config) {
     const container = document.getElementById(config.containerId);
 
     if (!container) {
-        console.error(`Container with ID ${config.containerId} not found.`);
+        console.error(`找不到容器: ${config.containerId}`);
         return;
     }
 
     container.innerHTML = '';
 
     for (let row = 0; row < config.rows; row++) {
+        const rowLetter = rowLetters[row];
+
         for (let col = 1; col <= config.cols; col++) {
-            const rowLetter = rowLetters[config.startRowCharIndex + row];
             const cageId = `${config.prefix}-${rowLetter}${col}`;
             const cage = createCageElement(cageId, config.type, config.containerId);
             container.appendChild(cage);
@@ -243,6 +343,7 @@ function generateCagesForArea(config) {
 
 function createCageElement(id, type, area) {
     const cage = document.createElement('div');
+
     cage.className = 'cage';
     cage.dataset.cageId = id;
     cage.dataset.type = type;
@@ -271,7 +372,8 @@ function createCageElement(id, type, area) {
     return cage;
 }
 
-// ==================== 批量模式函数 ====================
+// ==================== 批量模式 ====================
+
 function toggleBatchMode() {
     batchMode = !batchMode;
 
@@ -302,20 +404,25 @@ function toggleBatchMode() {
 }
 
 function toggleCageSelection(cageId) {
+    if (!isValidCageId(cageId)) {
+        alert(`无效笼位: ${cageId}`);
+        return;
+    }
+
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
     const data = cageData[cageId];
 
     if (data && data.userName) {
-        alert(`笼位 ${cageId} 已被使用者 ${data.userName} 占用，不能选择！`);
+        alert(`笼位 ${cageId} 已被 ${data.userName} 占用，不能选择！`);
         return;
     }
 
     if (selectedCages.has(cageId)) {
         selectedCages.delete(cageId);
-        if (cageElement) cageElement.classList.remove('selected');
+        cageElement.classList.remove('selected');
     } else {
         selectedCages.add(cageId);
-        if (cageElement) cageElement.classList.add('selected');
+        cageElement.classList.add('selected');
     }
 
     updateSelectionInfo();
@@ -326,14 +433,11 @@ function updateSelectionInfo() {
     const count = document.getElementById('selectedCount');
     const listContainer = document.getElementById('selectedCagesList');
 
-    if (info) info.textContent = `已选择 ${selectedCages.size} 个笼位`;
-    if (count) count.textContent = selectedCages.size;
-
-    if (!listContainer) return;
+    info.textContent = `已选择 ${selectedCages.size} 个笼位`;
+    count.textContent = selectedCages.size;
 
     if (selectedCages.size > 0) {
         const sortedCages = sortCageIds(Array.from(selectedCages));
-
         listContainer.innerHTML = sortedCages
             .map(cageId => `<span class="selected-cage-tag">${cageId}</span>`)
             .join('');
@@ -342,48 +446,12 @@ function updateSelectionInfo() {
     }
 }
 
-function sortCageIds(cageIds) {
-    return cageIds.sort((a, b) => {
-        const parseCageId = (id) => {
-            const parts = id.split('-');
-
-            if (parts.length !== 2) return null;
-
-            const prefix = parseInt(parts[0], 10);
-            const match = parts[1].match(/([A-Z]+)(\d+)/);
-
-            if (!match) return null;
-
-            return {
-                prefix,
-                rowChar: match[1],
-                col: parseInt(match[2], 10)
-            };
-        };
-
-        const parsedA = parseCageId(a);
-        const parsedB = parseCageId(b);
-
-        if (!parsedA || !parsedB) {
-            return a.localeCompare(b);
-        }
-
-        if (parsedA.prefix !== parsedB.prefix) {
-            return parsedA.prefix - parsedB.prefix;
-        }
-
-        if (parsedA.rowChar !== parsedB.rowChar) {
-            return parsedA.rowChar.localeCompare(parsedB.rowChar);
-        }
-
-        return parsedA.col - parsedB.col;
-    });
-}
-
 function clearSelection() {
     selectedCages.forEach(cageId => {
         const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
-        if (cageElement) cageElement.classList.remove('selected');
+        if (cageElement) {
+            cageElement.classList.remove('selected');
+        }
     });
 
     selectedCages.clear();
@@ -396,18 +464,19 @@ function batchBookCages() {
         return;
     }
 
-    const batchModal = document.getElementById('batchModal');
-
-    if (batchModal) {
-        batchModal.style.display = 'block';
-    }
-
+    document.getElementById('batchModal').style.display = 'block';
     updateSelectionInfo();
 }
 
-// ==================== 模态框函数 ====================
+// ==================== 模态框 ====================
+
 function openSingleModal(cageId) {
     if (batchMode) return;
+
+    if (!isValidCageId(cageId)) {
+        alert(`无效笼位: ${cageId}`);
+        return;
+    }
 
     currentEditingCage = cageId;
 
@@ -415,9 +484,7 @@ function openSingleModal(cageId) {
     const modal = document.getElementById('singleCageModal');
     const title = document.getElementById('singleModalTitle');
 
-    if (title) {
-        title.textContent = `笼位 ${cageId} 信息`;
-    }
+    title.textContent = `笼位 ${cageId} 信息`;
 
     if (data) {
         document.getElementById('singleUserName').value = data.userName || '';
@@ -428,38 +495,33 @@ function openSingleModal(cageId) {
     } else {
         document.getElementById('singleCageForm').reset();
         document.getElementById('singleStartDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('singleAnimalType').value = '';
+
+        const areaConfig = getAreaConfigByCageId(cageId);
+        document.getElementById('singleAnimalType').value = areaConfig ? areaConfig.type : '';
     }
 
-    if (modal) {
-        modal.style.display = 'block';
-    }
+    modal.style.display = 'block';
 }
 
 function closeSingleModal() {
-    const modal = document.getElementById('singleCageModal');
-
-    if (modal) {
-        modal.style.display = 'none';
-    }
-
+    document.getElementById('singleCageModal').style.display = 'none';
     currentEditingCage = null;
 }
 
 function closeBatchModal() {
-    const modal = document.getElementById('batchModal');
-
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    document.getElementById('batchModal').style.display = 'none';
 }
 
-// ==================== 数据更新函数 ====================
+// ==================== 显示更新 ====================
+
 function updateCageDisplay(cageId) {
-    const data = cageData[cageId];
     const cageElement = document.querySelector(`[data-cage-id="${cageId}"]`);
 
-    if (!cageElement) return;
+    if (!cageElement) {
+        return;
+    }
+
+    const data = cageData[cageId];
 
     const statusElement = cageElement.querySelector('.cage-status');
     const userInfoElement = cageElement.querySelector('.user-info');
@@ -483,7 +545,10 @@ function updateCageDisplay(cageId) {
     today.setHours(0, 0, 0, 0);
     startDate.setHours(0, 0, 0, 0);
 
-    const daysUsed = Math.max(0, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)));
+    const daysUsed = Math.max(
+        0,
+        Math.floor((today - startDate) / (1000 * 60 * 60 * 24))
+    );
 
     let statusText;
     let statusClass;
@@ -503,14 +568,14 @@ function updateCageDisplay(cageId) {
     statusElement.className = `cage-status ${statusClass}`;
     userInfoElement.textContent = `使用者: ${data.userName}`;
 
-    let dateText = `开始: ${data.startDate}`;
+    let dateText = `开始: ${data.startDate || '-'}`;
 
     if (data.endDate) {
         dateText += ` | 结束: ${data.endDate}`;
     }
 
     if (data.experimentDesc) {
-        dateText += `\n${data.experimentDesc}`;
+        dateText += ` | ${data.experimentDesc}`;
     }
 
     dateInfoElement.textContent = dateText;
@@ -524,32 +589,34 @@ function updateCageDisplay(cageId) {
 
 function updateAllCages() {
     document.querySelectorAll('.cage').forEach(cageElement => {
-        const cageId = cageElement.dataset.cageId;
-        updateCageDisplay(cageId);
+        updateCageDisplay(cageElement.dataset.cageId);
     });
 }
 
 function updateStats() {
+    const validIds = getValidCageIdSet();
+
     let occupiedCount = 0;
     let longTermCount = 0;
 
-    const totalCages = areaConfigs.reduce((sum, config) => {
-        return sum + config.rows * config.cols;
-    }, 0);
-
     Object.keys(cageData).forEach(cageId => {
+        if (!validIds.has(cageId)) return;
+
         const data = cageData[cageId];
 
         if (data && data.userName) {
+            occupiedCount++;
+
             const startDate = new Date(data.startDate);
             const today = new Date();
 
             today.setHours(0, 0, 0, 0);
             startDate.setHours(0, 0, 0, 0);
 
-            const daysUsed = Math.max(0, Math.floor((today - startDate) / (1000 * 60 * 60 * 24)));
-
-            occupiedCount++;
+            const daysUsed = Math.max(
+                0,
+                Math.floor((today - startDate) / (1000 * 60 * 60 * 24))
+            );
 
             if (daysUsed > 7) {
                 longTermCount++;
@@ -557,6 +624,7 @@ function updateStats() {
         }
     });
 
+    const totalCages = validIds.size;
     const emptyCount = totalCages - occupiedCount;
 
     document.getElementById('statEmpty').textContent = emptyCount;
@@ -565,94 +633,114 @@ function updateStats() {
 }
 
 // ==================== 表单提交 ====================
-document.addEventListener('DOMContentLoaded', function() {
-    const singleCageForm = document.getElementById('singleCageForm');
-    const batchCageForm = document.getElementById('batchCageForm');
 
-    if (singleCageForm) {
-        singleCageForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+document.getElementById('singleCageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-            if (!currentEditingCage) return;
+    if (!currentEditingCage) return;
 
-            const animalType = document.getElementById('singleAnimalType').value;
+    const userName = document.getElementById('singleUserName').value.trim();
+    const startDate = document.getElementById('singleStartDate').value;
+    const endDate = document.getElementById('singleEndDate').value;
+    const animalType = document.getElementById('singleAnimalType').value;
+    const experimentDesc = document.getElementById('singleExperimentDesc').value.trim();
 
-            if (!animalType) {
-                alert('请选择动物类型！');
-                return;
-            }
-
-            const formData = {
-                userName: document.getElementById('singleUserName').value,
-                startDate: document.getElementById('singleStartDate').value,
-                endDate: document.getElementById('singleEndDate').value,
-                animalType: animalType,
-                experimentDesc: document.getElementById('singleExperimentDesc').value,
-                lastUpdated: new Date().toISOString()
-            };
-
-            cageData[currentEditingCage] = formData;
-
-            saveData();
-            updateCageDisplay(currentEditingCage);
-            updateStats();
-            closeSingleModal();
-
-            alert('笼位信息保存成功！');
-        });
+    if (!userName) {
+        alert('请输入使用者姓名！');
+        return;
     }
 
-    if (batchCageForm) {
-        batchCageForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (selectedCages.size === 0) {
-                alert('没有选中的笼位！');
-                return;
-            }
-
-            const animalType = document.getElementById('batchAnimalType').value;
-
-            if (!animalType) {
-                alert('请选择动物类型！');
-                return;
-            }
-
-            const formData = {
-                userName: document.getElementById('batchUserName').value,
-                startDate: document.getElementById('batchStartDate').value,
-                endDate: document.getElementById('batchEndDate').value,
-                animalType: animalType,
-                experimentDesc: document.getElementById('batchExperimentDesc').value,
-                lastUpdated: new Date().toISOString()
-            };
-
-            selectedCages.forEach(cageId => {
-                cageData[cageId] = { ...formData };
-            });
-
-            saveData();
-            selectedCages.forEach(updateCageDisplay);
-            updateStats();
-
-            const count = selectedCages.size;
-
-            clearSelection();
-            closeBatchModal();
-
-            alert(`成功预约 ${count} 个笼位！`);
-        });
+    if (!startDate) {
+        alert('请选择开始使用日期！');
+        return;
     }
 
-    init();
+    if (!animalType) {
+        alert('请选择动物类型！');
+        return;
+    }
+
+    cageData[currentEditingCage] = {
+        userName,
+        startDate,
+        endDate,
+        animalType,
+        experimentDesc,
+        lastUpdated: new Date().toISOString()
+    };
+
+    saveData(true);
+    updateCageDisplay(currentEditingCage);
+    updateStats();
+    closeSingleModal();
+
+    alert('笼位信息保存成功！');
 });
 
-// ==================== 终止占用功能 ====================
+document.getElementById('batchCageForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (selectedCages.size === 0) {
+        alert('没有选中的笼位！');
+        return;
+    }
+
+    const userName = document.getElementById('batchUserName').value.trim();
+    const startDate = document.getElementById('batchStartDate').value;
+    const endDate = document.getElementById('batchEndDate').value;
+    const animalType = document.getElementById('batchAnimalType').value;
+    const experimentDesc = document.getElementById('batchExperimentDesc').value.trim();
+
+    if (!userName) {
+        alert('请输入使用者姓名！');
+        return;
+    }
+
+    if (!startDate) {
+        alert('请选择开始使用日期！');
+        return;
+    }
+
+    if (!animalType) {
+        alert('请选择动物类型！');
+        return;
+    }
+
+    const formData = {
+        userName,
+        startDate,
+        endDate,
+        animalType,
+        experimentDesc,
+        lastUpdated: new Date().toISOString()
+    };
+
+    selectedCages.forEach(cageId => {
+        if (isValidCageId(cageId)) {
+            cageData[cageId] = { ...formData };
+        }
+    });
+
+    const count = selectedCages.size;
+
+    saveData(true);
+    selectedCages.forEach(updateCageDisplay);
+    updateStats();
+    clearSelection();
+    closeBatchModal();
+
+    alert(`成功预约 ${count} 个笼位！`);
+});
+
+// ==================== 终止和清空 ====================
+
 function terminateSingleCage() {
-    if (currentEditingCage && confirm(`确定要终止笼位 ${currentEditingCage} 的占用吗？`)) {
+    if (!currentEditingCage) return;
+
+    if (confirm(`确定要终止笼位 ${currentEditingCage} 的占用吗？`)) {
         delete cageData[currentEditingCage];
 
-        saveData();
+        saveData(true);
         updateCageDisplay(currentEditingCage);
         updateStats();
         closeSingleModal();
@@ -661,31 +749,11 @@ function terminateSingleCage() {
     }
 }
 
-// ==================== 数据导出 ====================
-function exportData() {
-    const dataStr = JSON.stringify(cageData, null, 2);
-    const dataBlob = new Blob([dataStr], {
-        type: 'application/json;charset=utf-8'
-    });
-
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = `动物房笼位数据_${new Date().toISOString().split('T')[0]}.json`;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-}
-
 function clearAllData() {
     if (confirm('确定要清空所有笼位数据吗？此操作不可恢复！')) {
         cageData = {};
 
-        saveData();
+        saveData(true);
         updateAllCages();
         updateStats();
         clearSelection();
@@ -694,7 +762,26 @@ function clearAllData() {
     }
 }
 
+// ==================== 数据导出 ====================
+
+function exportData() {
+    const dataStr = JSON.stringify(cageData, null, 2);
+    const dataBlob = new Blob([dataStr], {
+        type: 'application/json; charset=utf-8'
+    });
+
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `动物房笼位数据_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+}
+
 // ==================== 模态框事件 ====================
+
 window.addEventListener('click', function(e) {
     const singleModal = document.getElementById('singleCageModal');
     const batchModal = document.getElementById('batchModal');
@@ -707,3 +794,39 @@ window.addEventListener('click', function(e) {
         closeBatchModal();
     }
 });
+
+// ==================== 初始化 ====================
+
+async function init() {
+    console.log('页面初始化中...');
+
+    generateAllCages();
+    await loadData();
+    updateAllCages();
+    updateStats();
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const singleStartDate = document.getElementById('singleStartDate');
+    const batchStartDate = document.getElementById('batchStartDate');
+
+    if (singleStartDate) {
+        singleStartDate.value = today;
+    }
+
+    if (batchStartDate) {
+        batchStartDate.value = today;
+    }
+
+    console.log('页面初始化完成');
+
+    setInterval(async () => {
+        if (isSaving) return;
+
+        await loadData();
+        updateAllCages();
+        updateStats();
+    }, SYNC_INTERVAL);
+}
+
+document.addEventListener('DOMContentLoaded', init);
