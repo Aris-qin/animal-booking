@@ -550,5 +550,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-05-15T01:29:41.945Z"
+  },
+  "1-C3": {
+    "userName": "cxm",
+    "startDate": "2026-05-15",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-05-15T01:30:43.815Z"
   }
 }
