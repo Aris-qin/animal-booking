@@ -542,5 +542,13 @@
     "animalType": "rat",
     "experimentDesc": "",
     "lastUpdated": "2026-05-14T13:17:09.596Z"
+  },
+  "1-C1": {
+    "userName": "cxm",
+    "startDate": "2026-05-15",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-05-15T01:29:41.945Z"
   }
 }
