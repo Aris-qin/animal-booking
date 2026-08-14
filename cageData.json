@@ -574,5 +574,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-08-07T03:09:26.237Z"
+  },
+  "1-A3": {
+    "userName": "不可占用",
+    "startDate": "2028-06-30",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-08-14T08:02:16.618Z"
   }
 }
