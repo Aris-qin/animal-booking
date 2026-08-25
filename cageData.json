@@ -574,5 +574,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-08-14T08:02:16.618Z"
+  },
+  "1-C2": {
+    "userName": "廖辉",
+    "startDate": "2026-08-25",
+    "endDate": "",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-08-25T02:18:23.279Z"
   }
 }
