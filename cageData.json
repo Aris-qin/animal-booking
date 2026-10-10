@@ -582,5 +582,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-10-10T12:27:41.495Z"
+  },
+  "2-B1": {
+    "userName": "梁海英",
+    "startDate": "2026-10-10",
+    "endDate": "2026-12-02",
+    "animalType": "mouse",
+    "experimentDesc": "",
+    "lastUpdated": "2026-10-10T12:28:18.798Z"
   }
 }
