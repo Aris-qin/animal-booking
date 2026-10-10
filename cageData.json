@@ -558,5 +558,13 @@
     "animalType": "rat",
     "experimentDesc": "",
     "lastUpdated": "2026-10-10T12:10:48.093Z"
+  },
+  "4-C2": {
+    "userName": "jxh",
+    "startDate": "2026-10-10",
+    "endDate": "",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-10-10T12:10:56.112Z"
   }
 }
