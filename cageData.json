@@ -550,5 +550,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-10-10T11:45:53.214Z"
+  },
+  "4-C1": {
+    "userName": "纪小杭",
+    "startDate": "2026-10-10",
+    "endDate": "",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-10-10T12:10:29.149Z"
   }
 }
