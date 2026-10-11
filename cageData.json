@@ -574,5 +574,13 @@
     "animalType": "mouse",
     "experimentDesc": "",
     "lastUpdated": "2026-10-11T15:39:44.442Z"
+  },
+  "1-H1": {
+    "userName": "GQ",
+    "startDate": "2026-10-11",
+    "endDate": "2026-12-31",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-10-11T15:40:17.147Z"
   }
 }
