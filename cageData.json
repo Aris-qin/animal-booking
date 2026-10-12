@@ -574,5 +574,13 @@
     "animalType": "rat",
     "experimentDesc": "",
     "lastUpdated": "2026-10-12T00:30:26.766Z"
+  },
+  "4-E2": {
+    "userName": "gq",
+    "startDate": "2026-10-10",
+    "endDate": "2026-12-31",
+    "animalType": "rat",
+    "experimentDesc": "",
+    "lastUpdated": "2026-10-12T00:30:45.848Z"
   }
 }
